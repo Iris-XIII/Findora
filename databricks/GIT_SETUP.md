@@ -35,6 +35,17 @@ If folder discovery fails, set `project_root` to the workspace path ending in
 `MadHack_2026/databricks`, then run again. After local changes are pushed, use **Pull**
 in the Databricks Git dialog to update the cloud copy.
 
+To find the real path, right-click the `databricks` directory inside your cloned
+repository and choose **Copy → Path**. Paste it into the `project_root` widget at
+the top of the notebook. It must contain both `findora_data` and `config`.
+The notebook also accepts a copied repo-root or notebook path and checks its ancestors.
+Paths beginning `/Users/`, `/Shared/`, or `/Repos/` are mapped to `/Workspace/...`.
+Do not use your browser URL or the local Linux path for this setting.
+
+If an error refers only to `/Workspace/.../Findora_B`, you are running an older
+copy. Select `codex/databricks-serpapi`, **Pull**, and open the notebook inside that
+Git folder. Pulling a Git folder does not update a separately imported notebook.
+
 The notebook and App have not yet been run in your workspace. Send the resulting
 counts or error text after the first run. App deployment and backend integration
 follow ingestion verification.

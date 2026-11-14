@@ -12,16 +12,63 @@ from pathlib import Path
 import json
 import sys
 
+
+def locate_project_root(explicit="", cwd=None, notebook_path=None):
+    """Locate sibling code/config files without depending on notebook execution CWD."""
+    def workspace_path(value):
+        value = str(value).strip()
+        if value.startswith("file:"):
+            value = value[5:]
+        if value.startswith(("/Users/", "/Shared/", "/Repos/")):
+            value = "/Workspace" + value
+        return Path(value)
+
+    if explicit:
+        # An explicit path must not silently select a different checkout from CWD.
+        starts = [workspace_path(explicit)]
+    else:
+        starts = []
+        if notebook_path:
+            starts.append(workspace_path(notebook_path))
+        starts.append(Path(cwd) if cwd is not None else Path.cwd())
+    checked = set()
+    for start in starts:
+        for base in [start, *list(start.parents)[:5]]:
+            for candidate in (base, base / "databricks"):
+                if candidate in checked:
+                    continue
+                checked.add(candidate)
+                required = ("findora_data/common.py", "findora_data/normalize.py",
+                            "findora_data/pipeline.py", "config/products.json", "config/approvals.json")
+                if all((candidate / name).is_file() for name in required):
+                    return candidate
+    return None
+
+
 dbutils.widgets.text("project_root", "", "Optional path to databricks or Findora_B folder")
 dbutils.widgets.text("catalog", "workspace", "Existing Unity Catalog catalog")
 root_text = dbutils.widgets.get("project_root").strip()
-if root_text:
-    root = Path(root_text)
-else:
-    options = [Path.cwd(), Path.cwd().parent, Path.cwd() / "databricks"]
-    root = next((p for p in options if (p / "findora_data").is_dir()), None)
-    if root is None:
-        raise ValueError("Set project_root to the /Workspace/.../databricks or Findora_B folder containing findora_data")
+root = locate_project_root(root_text)
+notebook_path = None
+if root is None and not root_text:
+    # Some runtimes use a driver directory rather than the notebook directory.
+    # If context access is restricted, the explicit widget remains available.
+    try:
+        notebook_path = dbutils.notebook.entry_point.getDbutils().notebook().getContext().notebookPath().get()
+    except Exception:
+        pass
+    root = locate_project_root(notebook_path=notebook_path)
+if root is None:
+    print(f"Current working directory: {Path.cwd()}")
+    if notebook_path:
+        print(f"Notebook workspace path: {notebook_path}")
+    raise ValueError(
+        "Code folder not found. Open the Git folder on branch codex/databricks-serpapi, "
+        "then open databricks/notebooks/01_ingest. Set the project_root widget to the "
+        "copied workspace path of its databricks folder (containing findora_data AND config). "
+        "A standalone copy of this notebook is not sufficient."
+    )
+print(f"Using code folder: {root}")
 sys.path.insert(0, str(root))
 from findora_data.common import load_envelopes, load_products
 from findora_data.normalize import normalize

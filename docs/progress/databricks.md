@@ -4,7 +4,7 @@
 **Last updated:** 2026-11-14
 
 ## Local verification evidence
-- `python3 -m unittest discover -s tests -v` from `databricks/`: 27 tests passed.
+- `python3 -m unittest discover -s tests -v` from `databricks/`: 33 tests passed.
 - `python3 -m findora_data.collect --dry-run`: 3 targets, request ceiling 9; no API calls.
 - `python3 -m compileall -q findora_data app notebooks`: passed.
 - `git diff --check`, Python AST/config JSON validation, and new-file whitespace checks: passed.
@@ -14,6 +14,9 @@
 - `python3 -m findora_data.package_upload`: built `databricks/data/upload/findora_databricks_upload.zip`.
   Manifest records source hashes and expected counts; archive excludes private `.env` and unrelated files.
 - Tests now also cover Google redirects, private key loading, credential exclusion, and immutable snapshot copying.
+- Notebook bootstrap tests cover repo-root and nested working directories, notebook-context paths,
+  explicit path overrides, and missing supporting files. Context access in the real serverless
+  workspace is still unverified; the explicit `project_root` widget remains the fallback.
 
 ## Implemented locally
 - Standard-library SerpAPI collector: Shopping discovery then Immersive Product stores,
@@ -32,7 +35,8 @@
   no key was copied from chat. It is ignored by Git and excluded from the upload package.
 
 ## Next steps
-1. Publish B's code on `codex/databricks-serpapi`; user clones the existing GitHub repository in a Databricks Git folder.
+1. Initial implementation published as `1d749b1` on `codex/databricks-serpapi`.
+   User should Pull this branch and open the notebook inside the Git folder.
 2. Select the branch, open `databricks/notebooks/01_ingest`, run its setup cell on serverless compute,
    then upload all 11 raw JSON files into `/Volumes/workspace/bronze/serpapi_raw/responses` and Run All.
 3. Record actual cloud counts and rerun to verify stable observation counts.
@@ -48,6 +52,9 @@
   User requested a separate Git branch as the fallback. No authenticated Databricks access
   is available to this agent; cloning in Databricks and first notebook run remain user steps.
 - Real source responses exist; approvals are still empty. No cloud SQL or deployment test yet.
+- User's first notebook run failed to locate the code folder. Its error text matches the older
+  ZIP notebook. Added ancestor/context discovery and explicit instructions to open the Git copy.
+  The supplied notebook browser URL identifies an object, but does not reveal its workspace path.
 - Store links in these responses use Google `/goto` redirects. Review queue now provides
   clickable links and permits only explicitly reviewed merchant destinations. One tested
   redirect led to a different size/color; no exact match was inferred from its title.
@@ -71,7 +78,7 @@
   Other price statistics cover all reviewed retailer-time observations. Row count is not date coverage.
 - Current freshness and summary semantics are B's proposal to C, not a shared-contract amendment.
 - Raw archive must remain complete; removing an approval retracts its Silver row on rebuild.
-- Branch prepared for publication: `codex/databricks-serpapi`, based on `main`.
+- Published feature branch: `codex/databricks-serpapi`, based on `main`.
   `GIT_SETUP.md` gives clone, branch-selection, Volume-upload, and notebook steps.
   Main and the existing `Iris_databrick_pipeline` branch are not modified by this feature branch.
 - Raw data, `.env`, and upload archives remain local/ignored. App deployment and backend
