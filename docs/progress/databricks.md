@@ -4,6 +4,9 @@
 **Last updated:** 2026-11-14
 
 ## Local verification evidence
+- User reports a successful Databricks Run All: Bronze 130, canonical products 3,
+  normalized offers and all offer/summary Gold views 0. This is ingestion evidence,
+  not verification of exact offers, backend integration, or App deployment.
 - `python3 -m unittest discover -s tests -v` from `databricks/`: 33 tests passed.
 - `python3 -m findora_data.collect --dry-run`: 3 targets, request ceiling 9; no API calls.
 - `python3 -m compileall -q findora_data app notebooks`: passed.
@@ -35,6 +38,9 @@
   no key was copied from chat. It is ignored by Git and excluded from the upload package.
 
 ## Next steps
+0. Focus on one unisex Gildan 18000 Black adult M single-unit sweatshirt. Use
+   `config/focus_products.json` for at most 3 collection requests; keep the full
+   manifest for ingestion. Existing IDs/history are preserved; canonical count becomes 4.
 1. Initial implementation published as `1d749b1` on `codex/databricks-serpapi`.
    User should Pull this branch and open the notebook inside the Git folder.
 2. Select the branch, open `databricks/notebooks/01_ingest`, run its setup cell on serverless compute,
@@ -51,7 +57,8 @@
   ZIP import failed with `Path (undefined/findora_databricks_upload) doesn't start with '/'`.
   User requested a separate Git branch as the fallback. No authenticated Databricks access
   is available to this agent; cloning in Databricks and first notebook run remain user steps.
-- Real source responses exist; approvals are still empty. No cloud SQL or deployment test yet.
+- Real source responses exist; approvals are still empty. User reported successful
+  cloud ingestion; populated Gold offers and App deployment are still unverified.
 - User's first notebook run failed to locate the code folder. Its error text matches the older
   ZIP notebook. Added ancestor/context discovery and explicit instructions to open the Git copy.
   The supplied notebook browser URL identifies an object, but does not reveal its workspace path.
@@ -71,7 +78,7 @@
   Updated `01_ingest.py` to support imported snapshots and display the candidate review table.
 
 ## Handoff notes
-- Runtime catalog: `workspace`, confirmed from screenshot; write permissions still need testing.
+- Runtime catalog: `workspace`; user reported a successful write/read notebook run.
 - `gold.product_offers` is historical approved snapshots; `gold.current_offers` is latest per
   product/retailer within 24 hours. Backend maps `product_url` to API `url`.
 - `gold.price_summary.lowest_observed_price` comes from current offers (NULL if stale).
