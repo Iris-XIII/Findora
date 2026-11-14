@@ -1,0 +1,29 @@
+[
+  {
+    "product_id": "columbia-1533891-black-m-regular",
+    "title": "Columbia Men's Watertight II Rain Jacket — Black, M Regular",
+    "query": "Columbia mens Watertight II 1533891 black medium regular jacket",
+    "brand": "Columbia", "model": "1533891", "category": "jacket",
+    "color": "Black", "size": "M Regular", "condition": "new", "currency": "USD",
+    "reference_url": "https://www.columbia.com/p/mens-watertight-ii-rain-jacket-1533891.html",
+    "image_url": null
+  },
+  {
+    "product_id": "columbia-2088121-black-m-regular",
+    "title": "Columbia Men's Marquam Peak Fusion II Hooded Parka — Black, M Regular",
+    "query": "Columbia mens Marquam Peak Fusion II 2088121 black medium regular parka",
+    "brand": "Columbia", "model": "2088121", "category": "coat",
+    "color": "Black", "size": "M Regular", "condition": "new", "currency": "USD",
+    "reference_url": "https://www.columbia.com/p/mens-marquam-peak-fusion-ii-hooded-parka-2088121.html?color=011",
+    "image_url": null
+  },
+  {
+    "product_id": "carhartt-k121-black-m-regular",
+    "title": "Carhartt Men's Loose Fit Midweight Hoodie — Black, M Regular",
+    "query": "Carhartt mens K121 BLK loose fit midweight hoodie black medium regular",
+    "brand": "Carhartt", "model": "K121", "category": "sweatshirt",
+    "color": "Black", "size": "M Regular", "condition": "new", "currency": "USD",
+    "reference_url": "https://www.carhartt.com/product/K121-BLKLREG/loose-fit-midweight-hoodie",
+    "image_url": null
+  }
+]
