@@ -90,3 +90,16 @@
   Main and the existing `Iris_databrick_pipeline` branch are not modified by this feature branch.
 - Raw data, `.env`, and upload archives remain local/ignored. App deployment and backend
   integration remain pending after ingestion succeeds. Push result is reported in the session handoff.
+
+## Manual observation support (2026-11-14)
+- Added a manual snapshot importer with explicit provenance, capture timestamps,
+  input validation, and stable candidate IDs. Existing exact-match approval remains required.
+- Local validation: `cd databricks && python3 -m unittest discover -s tests -v`:
+  38 tests passed. No cloud validation of this new importer yet.
+- Latest user-reported cloud counts remain 130 Bronze, 4 products, zero offers.
+- Amazon evidence is pending: screenshot URL ASIN B01M0PENYV differs from the
+  user-reported Product Details ASIN B0D14PTTPL. Reported model G18000, unisex-adult;
+  capture approximately 2026-11-14 18:35 Chicago (2026-11-15 00:35 UTC).
+  No approval or real manual snapshot has been generated from this unresolved evidence.
+- Next: confirm selected variant URL, retain evidence, import and review the observation,
+  then verify a populated Gold offer in Databricks.

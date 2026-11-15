@@ -11,6 +11,11 @@ ATTRIBUTES = ("brand", "model", "color", "size", "condition", "currency")
 def candidates(envelope):
     if envelope.get("format_version") != 1 or envelope.get("source_type") != "snapshot":
         raise ValueError("Only version 1 real snapshot envelopes are accepted")
+    if envelope.get("source") == "manual_snapshot":
+        from .manual import manual_candidates
+        return manual_candidates(envelope)
+    if envelope.get("source", "serpapi") != "serpapi":
+        raise ValueError("Unsupported snapshot source")
     response = envelope["response"]
     metadata = response.get("search_metadata", {})
     if response.get("error") or metadata.get("status") != "Success" or not metadata.get("id"):
@@ -95,7 +100,7 @@ def normalize(envelopes, products, approvals):
         for row in candidates(envelope):
             cid = row["candidate_id"]
             provenance = dict(row["provenance"])
-            bronze[cid] = {"source": "serpapi", "source_product_id": row["source_product_id"],
+            bronze[cid] = {"source": provenance["source"], "source_product_id": row["source_product_id"],
                            "raw_title": row["title"], "brand": None, "model": None, "variant": None,
                            "price": row["price"], "currency": row["currency"], "product_url": row["product_url"],
                            "observed_at": row["observed_at"], "ingestion_batch": row["batch_id"],
