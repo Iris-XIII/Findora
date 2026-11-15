@@ -1,0 +1,21 @@
+[
+  {
+    "candidate_id": "df2e9a19369b51861c6fbe5a5412cf32",
+    "product_id": "gildan-18000-unisex-black-m-single",
+    "confirmed": true,
+    "confirmed_attributes": {
+      "brand": "Gildan",
+      "model": "18000",
+      "color": "Black",
+      "size": "M",
+      "condition": "new",
+      "currency": "USD"
+    },
+    "evidence_url": "https://www.amazon.com/dp/B01M0PENYV?th=1&psc=1",
+    "evidence_notes": "User-supplied Amazon screenshot shows Black, Medium, Number of Items 1, USD 10.93, In Stock, seller/shipper Amazon.com. User confirmed G18000 and unisex-adult in Product Details and capture approximately Nov 14 2026 18:35 America/Chicago. Model G18000 is recorded against canonical model 18000. Manual visual variant review, not ASIN verification: address-bar ASIN B01M0PENYV differs from user-reported details ASIN B0D14PTTPL (later typed B0D14PTTPLL). Preserve discrepancy; do not use those identifiers as interchangeable variant keys. Standard new retail offer; no used condition shown. Listed item price excludes any shipping/tax; Prime/free-shipping conditions are not assumed. The crossed-out list price and Date First Available are not historical observations.",
+    "price_verified": true,
+    "available": true,
+    "reviewed_at": "2026-11-15T00:49:00.365551+00:00",
+    "review_method": "manual screenshot plus user model and variant confirmations; ASIN unresolved"
+  }
+]
