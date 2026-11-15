@@ -239,3 +239,11 @@ Smoke checks: `curl -s localhost:8000/health` and `curl -s 'localhost:8000/produ
 
 ## Handoff notes
 - No backend, Databricks, or shared contract files changed.
+
+## User-requested advice wording — 2026-11-15
+- Replaced visible insufficient-data heading with View available offer for reviewed
+  current offers, Price check pending without offers, or Explore the demo for seeds.
+- Kept API decision and history/verification guards; no unsupported BUY/WAIT claims.
+- Status wording now Price tracking pending. Backend tests: 42 passed; diff check clean.
+- Node/npm unavailable on this VM, so frontend build/browser verification not performed.
+- Change lives on codex/amazon-integration; deployment is not yet verified.

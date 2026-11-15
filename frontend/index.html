@@ -687,7 +687,7 @@
       profile: ['User profile', 'Update your shopping information and personal preferences.'],
     };
     const statusLabels = {
-      demo: 'Seed demo', observed: 'Real observations', insufficient: 'Insufficient data',
+      demo: 'Seed demo', observed: 'Real observations', insufficient: 'Price tracking pending',
       live: 'Live source', snapshot: 'Real snapshot', exact: 'Exact match',
       unverified: 'Match unverified', verified: 'Verified real price', historical: 'Last observed price',
     };
@@ -2300,18 +2300,25 @@
       } else if (enoughRealHistory && !hasVerifiedCurrentOffer && decision !== 'INSUFFICIENT_DATA') {
         decision = 'INSUFFICIENT_DATA';
         dataStatus = 'insufficient';
-        explanation = 'INSUFFICIENT_DATA: no fresh verified offer is available to compare against the observed price history.';
+        explanation = 'Check the retailer for an updated price. No fresh verified offer is available yet.';
       } else if (!enoughRealHistory || decision === 'INSUFFICIENT_DATA' || dataStatus === 'insufficient') {
         decision = 'INSUFFICIENT_DATA';
         dataStatus = 'insufficient';
         // Only blame coverage when coverage is actually short; otherwise keep the backend's reason.
         if (!enoughRealHistory) {
-          explanation = `INSUFFICIENT_DATA: found ${coverage.distinctDates} distinct UTC date(s) across ${coverage.spanHours.toFixed(1)} hours. At least 3 dates spanning 48 hours of verified real observations are required.`;
+          explanation = hasVerifiedCurrentOffer
+            ? 'A reviewed offer is available in Compare offers. Check the selected size, color, shipping and tax at the retailer. We are still collecting price history to assess buy/wait timing.'
+            : 'Check back for a fresh reviewed offer. We are still collecting prices for this product.';
         }
       }
       const card = node('div', 'advice-card');
-      card.append(label(dataStatus));
-      card.append(node('h4', '', decision.replaceAll('_', ' ')));
+      card.append(decision === 'INSUFFICIENT_DATA'
+        ? node('span', 'tag', hasDemoHistory ? 'Demo data' : 'Price tracking')
+        : label(dataStatus));
+      const heading = decision === 'INSUFFICIENT_DATA'
+        ? (hasDemoHistory ? 'Explore the demo' : hasVerifiedCurrentOffer ? 'View available offer' : 'Price check pending')
+        : decision.replaceAll('_', ' ');
+      card.append(node('h4', '', heading));
       card.append(node('p', '', explanation));
       appendEvidence(card, data.evidence, hasDemoHistory);
       target.append(card);

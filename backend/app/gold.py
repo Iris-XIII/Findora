@@ -35,6 +35,8 @@ class Gold:
         self.query(f'SELECT product_id FROM {self.ns}.product_catalog LIMIT 1')
 
     def products(self, query='', product_id=None):
+        # Narrow spelling alias; preserve model/variant tokens and SQL parameter binding.
+        query = re.sub(r'\bcolumina\b', 'columbia', query, flags=re.IGNORECASE)
         where = 'product_id = :id' if product_id is not None else 'contains(lower(concat(title, \' \', coalesce(brand, \'\'))), lower(:query))'
         rows = self.query(f'''SELECT product_id, title, brand, category, image_url,
             CAST(NULL AS STRING) AS description, data_status FROM {self.ns}.product_catalog

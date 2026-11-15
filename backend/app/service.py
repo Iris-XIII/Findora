@@ -55,6 +55,13 @@ def advise(product, history, current):
               'explanation': 'Need a fresh reviewed offer and at least 3 UTC observation dates spanning 48 hours.',
               'evidence': [{**cov, 'current_lowest_price': current_price, 'median_observed_price': historical_median}],
               'data_status': 'demo' if demo else 'insufficient'}
+    if current_price is not None and not demo:
+        best = min(current, key=lambda r: r['price'])
+        result['explanation'] = (f"View the reviewed offer from {best['retailer']} at ${current_price:.2f} USD. "
+                                 'Confirm the variant, shipping and tax at the retailer. '
+                                 'We are still collecting price history to assess buy/wait timing.')
+    elif not demo:
+        result['explanation'] = 'No fresh reviewed offer is available yet. Check back for updated prices.'
     if demo:
         result['explanation'] = 'Illustrative demo data never qualifies for real buying advice.'
     elif current_price is not None and historical_median is not None and cov['distinct_observation_dates'] >= 3 and cov['span_hours'] >= 48:

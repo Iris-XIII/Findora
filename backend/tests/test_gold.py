@@ -128,3 +128,18 @@ def test_sql_guardrails_and_params():
     assert 'INTERVAL 24 HOURS' in sql
     assert 'observed_at <= current_timestamp()' in sql
     assert params=={'id':'test'}
+
+
+def test_single_offer_has_useful_guidance_without_buy_timing():
+    result = advise(PRODUCT, [row(220)], [row(220)])
+    assert result['decision'] == 'INSUFFICIENT_DATA'
+    assert '$220.00 USD' in result['explanation']
+    assert 'Test retailer' in result['explanation']
+    assert 'still collecting price history' in result['explanation']
+
+
+def test_columina_typo_preserves_variant_query():
+    calls = []
+    store = Gold(lambda sql, params: calls.append((sql, params)) or [])
+    store.products(query='Columina 2088121 Black')
+    assert calls[0][1] == {'query': 'columbia 2088121 Black'}

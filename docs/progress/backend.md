@@ -56,3 +56,12 @@
   read-only status check: STOPPED; no start request made during this integration.
 - Remaining: live Gold smoke check and deployed backend URL, then frontend live test.
   No change to 24-hour freshness policy, approved observations, or cloud tables.
+
+## Offer guidance and Columbia demo check — 2026-11-15
+- One fresh verified offer now gets actionable retailer/price guidance while retaining
+  INSUFFICIENT_DATA in the API for unavailable buy/wait timing. No invented history.
+- Search accepts the explicit spelling alias columina -> columbia, preserving other tokens.
+- VERIFIED: 42 backend tests pass, including one-observation guidance and bound alias query.
+- Live SQL verified Columbia 2088121 Black/M Regular in Gold current_offers: $220,
+  Columbia Sportswear, exact snapshot at 2026-11-15T03:09Z. Columbia 1533891 has no offer.
+- Cloud data unchanged; deploying branch UI/backend changes remains an integration step.
