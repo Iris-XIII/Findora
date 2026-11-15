@@ -232,3 +232,14 @@
 - Fallback retained: existing reviewed data. No new prices approved, no Databricks
   quota consumed, no claim of automatic verification or historical forecasting.
 - Local suite: 50 tests passed. CLI dry run confirmed two-request ceiling.
+
+## Targeted Amazon result (2026-11-15)
+- One user-authorized amazon_product lookup for B01M0PENYV succeeded; observation
+  2026-11-15 13:42:31 UTC. Selected Black / Medium / Number of Items 1;
+  product and single purchase offer USD 10.96; In Stock; shipper/seller Amazon.com.
+- Response reproduces details ASIN B0D14PTTPL vs selected ASIN B01M0PENYV;
+  generic special_size=large also conflicts with selected Size=Medium. Retain
+  both discrepancies rather than claim fully consistent identifiers/metadata.
+- Raw and comparison files saved under ignored data/retailer_probe, documented in
+  RETAILER_PROBE.md. No approval changes, no historical price overwrite, no cloud
+  ingestion, and no new normalization code in this step. Evidence lookup tested live.
