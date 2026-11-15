@@ -26,6 +26,9 @@ def candidates(envelope):
     if observed > fetched:
         raise ValueError("Source timestamp is later than collection time")
     engine = envelope["request"]["engine"]
+    if engine == "amazon_product":
+        from .amazon_detail import candidate
+        return [candidate(envelope)]
     if engine == "google_shopping":
         rows = response.get("shopping_results", [])
     elif engine == "google_immersive_product":
@@ -98,6 +101,9 @@ def normalize(envelopes, products, approvals):
         if envelope.get("target_product_id") not in targets:
             raise ValueError("Raw response refers to a target missing from the product manifest")
         for row in candidates(envelope):
+            if row["provenance"].get("engine") == "amazon_product":
+                from .amazon_detail import target_issues
+                row["problems"].extend(target_issues(row, targets[row["target_product_id"]]))
             cid = row["candidate_id"]
             provenance = dict(row["provenance"])
             bronze[cid] = {"source": provenance["source"], "source_product_id": row["source_product_id"],
@@ -114,9 +120,16 @@ def normalize(envelopes, products, approvals):
                            "price_verified": False, "available": False,
                            "confirmed_attributes": {k: "" for k in ATTRIBUTES},
                            "evidence_url": "", "evidence_notes": "", "reviewed_at": ""}
+            if "amazon_evidence" in provenance:
+                review[cid]["amazon_evidence"] = provenance["amazon_evidence"]
+                review[cid]["acknowledged_source_conflicts"] = []
             approval = approved.get(cid)
             if not approval:
                 continue
+            if "amazon_evidence" in provenance:
+                conflicts = set(provenance["amazon_evidence"]["source_conflicts"])
+                if not conflicts.issubset(set(approval.get("acknowledged_source_conflicts", []))):
+                    raise ValueError("Amazon source conflicts require explicit reviewer acknowledgement")
             used_approvals.add(cid)
             problems = list(row["problems"])
             served_url = row["product_url"]

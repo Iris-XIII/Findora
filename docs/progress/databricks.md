@@ -199,3 +199,15 @@
 - Reran 01/02/03 + validation verbatim. All statements OK, first attempt (the two mid-run Python cell crashes were a dict(Row) display bug in MY verification code, NOT SQL failures; all 22 validation statements verified clean).
 - Before/after comparison, all PASS: bronze 26 (key set (source, source_product_id, observed_at) identical, 26 distinct keys for 26 rows); silver products 5 (set identical); silver offers 26 (offer_id set identical); gold offers 26 (offer_id set identical); verified-price statistics identical (price_summary tuples byte-for-byte); provenance 26/26; demo eligibility demo/demo/not_eligible for all 5 products.
 - Validation integrity checks all still 0; match_type exact 25 / unverified 1; source_type demo 26; current_offers 15. No duplicates, no missing rows, no drift.
+
+## Amazon adapter integrated locally with main (2026-11-15)
+- Branch codex/amazon-integration based on main c01c991; ported only amazon_detail,
+  selected-variant checks/review evidence in normalize, and six adapter tests.
+- Unified persistence and main approvals unchanged; no silent restoration of the
+  previously demoted Amazon approval. No warehouse start or cloud write attempted.
+- `cd databricks && python3 -m unittest discover -s tests -q`: 72 passed.
+- Offline replay of the saved one-request Amazon response produced candidate
+  0d3fc8c37295c7f46cc376e127df89f0, USD 10.96, selected Black/M/1, Amazon.com,
+  source timestamp 2026-11-15T13:42:31Z. Generic ASIN/size conflicts retained.
+- Ready for code integration; review decision and live ingestion remain pending.
+  See databricks/AMAZON_REFRESH.md. No new SerpAPI quota used in this step.
