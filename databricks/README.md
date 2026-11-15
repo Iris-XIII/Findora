@@ -60,7 +60,20 @@ retries. The provider decides billing; consult your actual allowance.
 `data/raw/*.json` contains provider responses and collection metadata. `data/` is
 gitignored. API keys are stripped before writing. Preserve the full raw directory.
 The collector uses `google_shopping`, then `google_immersive_product` for candidates
-with tokens. Search ordering is not an exact-match guarantee.
+with tokens. Search ordering is not an exact-match guarantee. Add `--product-lookups N`
+(up to N per product, default 0) for `google_product` detail lookups: each uses the
+provider's prebuilt product-API link token from a discovery row (provider product
+ID or query fallback), preferring rows whose title mentions the target color and
+size — a candidate-ordering heuristic only, never an exact-match claim. Each lookup
+adds one request to the ceiling, e.g. for the focused Gildan target:
+
+```bash
+python3 -m findora_data.collect --products config/focus_products.json --product-lookups 1
+```
+
+`google_product` store rows may describe the default variant rather than the selected
+one, so they only enter the same review queue and approval workflow; nothing is
+auto-matched as exact.
 
 By default provider caching is allowed. `--fresh` bypasses caching and can consume
 additional quota. Re-fetching cached results is not new history: the source search

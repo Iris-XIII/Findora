@@ -1,6 +1,6 @@
 [
   {
-    "candidate_id": "df2e9a19369b51861c6fbe5a5412cf32",
+    "candidate_id": "c7c485f5cf7a20edb02ef5b9c921e190",
     "product_id": "gildan-18000-unisex-black-m-single",
     "confirmed": true,
     "confirmed_attributes": {
@@ -12,10 +12,11 @@
       "currency": "USD"
     },
     "evidence_url": "https://www.amazon.com/dp/B01M0PENYV?th=1&psc=1",
-    "evidence_notes": "User-supplied Amazon screenshot shows Black, Medium, Number of Items 1, USD 10.93, In Stock, seller/shipper Amazon.com. User confirmed G18000 and unisex-adult in Product Details and capture approximately Nov 14 2026 18:35 America/Chicago. Model G18000 is recorded against canonical model 18000. Manual visual variant review, not ASIN verification: address-bar ASIN B01M0PENYV differs from user-reported details ASIN B0D14PTTPL (later typed B0D14PTTPLL). Preserve discrepancy; do not use those identifiers as interchangeable variant keys. Standard new retail offer; no used condition shown. Listed item price excludes any shipping/tax; Prime/free-shipping conditions are not assumed. The crossed-out list price and Date First Available are not historical observations.",
+    "evidence_notes": "Corrected manual snapshot: replaces candidate df2e9a19369b51861c6fbe5a5412cf32, whose USD 10.93 price was a transcription typo by the user; the observed Amazon page price was USD 10.95, reconfirmed by the user viewing the live page on 2026-11-15. Original capture evidence unchanged: user-supplied Amazon screenshot shows Black, Medium, Number of Items 1, In Stock, seller/shipper Amazon.com, approximately Nov 14 2026 18:35 America/Chicago. Model G18000 recorded against canonical model 18000. Manual visual variant review, not ASIN verification: address-bar ASIN B01M0PENYV differs from user-reported details ASIN B0D14PTTPL; discrepancy preserved; identifiers not interchangeable. Standard new retail offer. Listed item price excludes shipping/tax; Prime conditions not assumed.",
     "price_verified": true,
     "available": true,
-    "reviewed_at": "2026-11-15T00:49:00.365551+00:00",
-    "review_method": "manual screenshot plus user model and variant confirmations; ASIN unresolved"
+    "reviewed_at": "2026-11-15T02:45:00Z",
+    "review_method": "manual screenshot plus user model, variant, and price-correction confirmations; ASIN unresolved",
+    "replaces_approval_for": "df2e9a19369b51861c6fbe5a5412cf32"
   }
 ]

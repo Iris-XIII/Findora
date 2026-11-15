@@ -172,6 +172,26 @@ class NormalizationTests(unittest.TestCase):
             normalize([raw], [product()], [approve(raw)])
 
 
+    def test_google_product_stores_enter_review_only(self):
+        raw = envelope()
+        raw["request"]["engine"] = "google_product"
+        raw["request"]["product_id"] = "111222"
+        result = normalize([raw], [product()], [])
+        self.assertEqual(len(result["bronze"]), 1)
+        self.assertEqual(result["offers"], [])
+        self.assertFalse(result["review"][0]["confirmed"])
+        provenance = json.loads(result["bronze"][0]["provenance"])
+        self.assertEqual(provenance["engine"], "google_product")
+        self.assertEqual(provenance["lookup_product_id"], "111222")
+
+    def test_google_product_candidate_approves_like_other_engines(self):
+        raw = envelope()
+        raw["request"]["engine"] = "google_product"
+        row = normalize([raw], [product()], [approve(raw)])["offers"][0]
+        self.assertEqual((row["match_type"], row["price"]), ("exact", 50.0))
+        self.assertEqual(json.loads(row["provenance"])["engine"], "google_product")
+
+
 class CollectorTests(unittest.TestCase):
     def test_budget_reserves_discovery_for_all_targets_and_strips_key(self):
         calls = []
@@ -197,6 +217,72 @@ class CollectorTests(unittest.TestCase):
             with self.assertRaises(CollectionError):
                 collect([product()], folder, "SECRET", fetcher=fake)
             self.assertEqual(len(list(Path(folder).glob("*.json"))), 1)
+
+    def test_google_product_lookup_prefers_discovered_product_ids(self):
+        calls = []
+        def fake(params, key):
+            calls.append(params)
+            if params["engine"] == "google_shopping":
+                return {"shopping_results": [{"product_id": 12345, "immersive_product_page_token": "one"},
+                                             {"product_id": 12345, "immersive_product_page_token": "two"}]}
+            return {"product_results": {"title": "Synthetic test jacket", "stores": []}}
+        with tempfile.TemporaryDirectory() as folder:
+            count = collect([product()], folder, "SECRET", 4, 2, False, 2, fetcher=fake)
+            self.assertEqual(count, 4)
+            self.assertEqual([c["engine"] for c in calls],
+                             ["google_shopping", "google_immersive_product", "google_immersive_product",
+                              "google_product"])
+            self.assertEqual(calls[3]["product_id"], "12345")
+
+    def test_google_product_lookup_prefers_prebuilt_token_and_variant_title(self):
+        calls = []
+        prebuilt_m = "https://serpapi.com/search.json?engine=google_product&page_token=tok-m&api_key=SECRET"
+        prebuilt_large = "https://serpapi.com/search.json?engine=google_product&page_token=tok-large"
+        def fake(params, key):
+            calls.append(params)
+            if params["engine"] == "google_shopping":
+                return {"shopping_results": [
+                    {"title": "Synthetic jacket Black Large", "product_id": 1,
+                     "serpapi_product_api": prebuilt_large},
+                    {"title": "Synthetic jacket Black M", "product_id": 2,
+                     "serpapi_product_api": prebuilt_m}]}
+            return {"product_results": {"stores": []}}
+        with tempfile.TemporaryDirectory() as folder:
+            count = collect([product()], folder, "SECRET", 3, 0, False, 2, fetcher=fake)
+            self.assertEqual(count, 3)
+            self.assertEqual(calls[1], {"engine": "google_product", "page_token": "tok-m"})
+            self.assertEqual(calls[2], {"engine": "google_product", "page_token": "tok-large"})
+            for call in calls:
+                self.assertNotIn("api_key", call)
+            for path in Path(folder).glob("*.json"):
+                self.assertNotIn("SECRET", path.read_text())
+
+    def test_google_product_lookup_reserves_discovery_budget(self):
+        calls = []
+        def fake(params, key):
+            calls.append(params)
+            if params["engine"] == "google_shopping":
+                return {"shopping_results": [{"product_id": "abc"}]}
+            return {"product_results": {"stores": []}}
+        with tempfile.TemporaryDirectory() as folder:
+            count = collect([product(), product("second")], folder, "SECRET", 3, 0, False, 1, fetcher=fake)
+            self.assertEqual(count, 3)
+            self.assertEqual([c["engine"] for c in calls],
+                             ["google_shopping", "google_product", "google_shopping"])
+
+    def test_google_product_lookup_falls_back_to_query_without_ids(self):
+        calls = []
+        def fake(params, key):
+            calls.append(params)
+            if params["engine"] == "google_shopping":
+                return {"shopping_results": [{"title": "Synthetic jacket"}]}
+            return {"product_results": {"stores": []}}
+        with tempfile.TemporaryDirectory() as folder:
+            count = collect([product()], folder, "SECRET", 2, 0, False, 1, fetcher=fake)
+            self.assertEqual(count, 2)
+            self.assertEqual([c["engine"] for c in calls], ["google_shopping", "google_product"])
+            self.assertEqual(calls[1].get("q"), "synthetic jacket")
+            self.assertNotIn("product_id", calls[1])
 
     def test_network_errors_do_not_expose_credentials(self):
         error = HTTPError("https://serpapi.com/search?api_key=SECRET", 429, "SECRET", {}, None)

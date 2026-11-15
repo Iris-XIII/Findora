@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # Findora: reviewed SerpAPI snapshots → Bronze → Silver → Gold
 # MAGIC Select **Serverless** notebook compute. For a Git clone, run the first code cell,
@@ -8,6 +12,7 @@
 # MAGIC Keep `catalog=workspace`. Leave `project_root` blank unless automatic discovery fails.
 
 # COMMAND ----------
+
 from pathlib import Path
 import json
 import sys
@@ -81,6 +86,7 @@ Path(raw_path).mkdir(parents=True, exist_ok=True)
 print(f"Upload collector JSON files into: {raw_path}")
 
 # COMMAND ----------
+
 # MAGIC %md
 # MAGIC The packaged `snapshots/` files are copied into the Volume below.
 # MAGIC Keep old responses: they are the observed history.
@@ -88,6 +94,7 @@ print(f"Upload collector JSON files into: {raw_path}")
 # MAGIC An empty approvals list is allowed: Bronze will populate, exact offers will remain empty.
 
 # COMMAND ----------
+
 from findora_data.package_upload import copy_snapshots
 
 if (root / "snapshots").is_dir():
@@ -105,6 +112,7 @@ counts = persist(spark, catalog, normalized)
 print(counts)
 
 # COMMAND ----------
+
 # Inspect candidates separately from verified offers. This table is NOT an exact-match comparison.
 review_path = Path(raw_path).parent / "review_queue.generated.json"
 review_path.write_text(json.dumps(normalized["review"], indent=2) + "\n")
@@ -118,12 +126,14 @@ display(spark.createDataFrame(review_rows,
     "product_id STRING, title STRING, retailer STRING, price DOUBLE, review_url STRING, issues STRING"))
 
 # COMMAND ----------
+
 display(spark.sql(f"SELECT * FROM `{catalog}`.gold.current_offers ORDER BY product_id, price"))
 display(spark.sql(f"SELECT * FROM `{catalog}`.gold.price_summary ORDER BY product_id"))
 display(spark.sql(f"SELECT * FROM `{catalog}`.gold.price_coverage ORDER BY product_id"))
 # Re-run ingestion on the same archive: counts must remain identical.
 
 # COMMAND ----------
+
 # A product option is separate from buy/wait timing advice. Only fresh reviewed offers qualify.
 demo_offers = spark.sql(f"""
 SELECT p.title, o.retailer, o.price, o.currency, o.product_url, o.observed_at,

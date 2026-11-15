@@ -140,3 +140,81 @@
   backend catalog, then verify the one real Gold offer reaches the demo. Collect
   further real dated observations afterward; do not substitute seed history for
   measured history or promise forecasting from one price point.
+
+## Google Product detail lookup added (2026-11-15)
+- `findora_data.collect` now supports `--product-lookups N` (default 0, opt-in): per
+  product, up to N `engine=google_product` SerpAPI calls, preferring provider product
+  IDs from `google_shopping` discovery (deduplicated, query fallback when absent).
+  The request budget still reserves one discovery call per remaining target, and the
+  dry-run ceiling formula includes the lookups. Default behavior is unchanged.
+- `findora_data.normalize` accepts `google_product` envelopes: store rows parse like
+  `google_immersive_product` (retailer from `name`, same price/currency/URL checks),
+  land in Bronze + review queue only, and the looked-up Google product ID is recorded
+  in provenance as `lookup_product_id`. No auto-exact matching was added; existing
+  variant/price/merchant approval requirements apply unchanged.
+- Motivation: find a second reviewable exact offer for the focused Gildan G18000
+  Black adult M target, alongside the manually reviewed Amazon snapshot.
+- Local validation: `python3 -m unittest discover -s tests -v` — 43 tests passed
+  (5 new: google_product parsing/review-only/approval; collector id preference,
+  budget reservation, query fallback). `collect --products config/focus_products.json
+  --dry-run` — 1 target, ceiling 3; with `--product-lookups 1` — ceiling 4.
+- PriceHistory.app integration deliberately deferred: no verified public API; any
+  future use must be labeled imported third-party history and cannot independently
+  verify current stock or selected-variant price.
+- Next: run the focused collection with a real key (not available in this
+  environment), upload new responses to the existing Volume, re-run ingestion, and
+  review the new `google_product` candidates for a second exact offer. Cloud counts,
+  offer approvals, and App deployment remain unverified.
+
+## First live google_product collection (2026-11-15)
+- User created the private `databricks/.env` in the workspace copy (gitignored;
+  packaging exclusion tests still pass). Key verified working via one live
+  `google_shopping` diagnostic call.
+- Two full focused runs failed only on the google_product step: calling with
+  `product_id` returned HTTP 200 with SerpAPI error `Google Product hasn't returned
+  any results for this query.` Discovery + both immersive detail calls succeeded
+  and were saved (3 requests each run; batches `603c08b9...` and `e1972f6a...`).
+- Fix: the collector now prefers the provider's own prebuilt `serpapi_product_api`
+  link token (`page_token` param; embedded api_key never copied into request
+  params), falls back to product ID, then the query. Rows whose title mentions the
+  target color and size are tried first — ordering heuristic only. 44 tests pass
+  locally (one new: prebuilt-token preference, variant-title ordering, no key
+  propagation).
+- Hybrid rerun (replayed saved discovery, no repeat charge; 1 paid lookup) saved a
+  successful `google_product` envelope. Lookup targeted `18000 Gildan - Heavy Blend
+  Crewneck Sweatshirt | Black | Size M by Screen Print Outlet` ($18.64, one store
+  row, Google `/goto` redirect link).
+- Local review queue (workspace `data/raw` only; this is NOT the full archive — the
+  original 11 responses and manual snapshot remain in the user's local raw dir and
+  the Volume): 46 candidates, including the Screen Print Outlet `/goto` candidate
+  (`merchant_redirect_requires_resolution`) as the reviewable second offer path.
+- Approximate SerpAPI spend this session: ~9 searches (6 successful run requests,
+  1 diagnostic shopping success, 2 error/failed responses likely uncharged).
+- Next: resolve the Screen Print Outlet `/goto` link per README section 2, verify
+  Black/M/single-unit/$18.64 on the merchant page, then approve for a second exact
+  offer. Upload the new raw envelopes into the existing Volume `responses` directory
+  and rerun ingestion. Cloud rerun and App deployment remain unverified.
+
+## Amazon price typo corrected (2026-11-15)
+- User identified that the approved manual snapshot's USD 10.93 was a transcription
+  typo; the observed Amazon price was USD 10.95 (reconfirmed on the live page).
+  No price change occurred — it is the same single 2026-11-15T00:35Z observation.
+- Correction method (no silent edits): reconstructed the exact original observation
+  by matching candidate-id hash df2e9a19... (Amazon.com, /dp/B01M0PENYV?th=1&psc=1,
+  observed 00:35Z), created corrected manual snapshot candidate c7c485f5... at USD 10.95
+  with a documented correction chain in provenance, and replaced the approval entry.
+  The erroneous 10.93 raw envelope remains in the archive unapproved (Bronze only).
+- Staged 9 new envelopes into the Volume `responses` directory (30 files total):
+  two focused SerpAPI batches (discovery + immersive details), the hybrid replay
+  batch with the google_product Screen Print Outlet lookup, and the corrected manual
+  snapshot.
+- Cloud rebuild executed from this session (notebook 01_ingest, catalog workspace):
+  Bronze 218, canonical products 4, Silver offers 1 — Amazon.com USD 10.95 exact at
+  2026-11-15T00:35Z; gold.current_offers/price_summary 1 row (lowest/median/min
+  10.95, observation_count 1); price_coverage 1 distinct date. Idempotent rerun
+  produced identical counts. The Gold offer provenance carries the full correction
+  chain (original_transcribed_price 10.93, price_correction_of df2e9a19...).
+- Screen Print Outlet google_product candidates (incl. the /goto redirect row) are
+  now in the cloud review queue, unapproved. History remains 1 of >= 3 observations.
+- Repo copies of `config/approvals.json` and the new code/tests/docs changes in this
+  Git checkout are uncommitted; commit/push needed to reach the user's local clone.

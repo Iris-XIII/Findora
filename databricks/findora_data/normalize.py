@@ -28,7 +28,7 @@ def candidates(envelope):
     engine = envelope["request"]["engine"]
     if engine == "google_shopping":
         rows = response.get("shopping_results", [])
-    elif engine == "google_immersive_product":
+    elif engine in ("google_immersive_product", "google_product"):
         rows = response.get("product_results", {}).get("stores", [])
     else:
         raise ValueError("Unsupported SerpAPI engine")
@@ -43,7 +43,7 @@ def candidates(envelope):
         us_price = envelope.get("market") == "us" and displayed_price.startswith(("$", "US$", "USD"))
         currency = explicit_currency or ("USD" if us_price else None)
         title = row.get("title") or response.get("product_results", {}).get("title") or ""
-        retailer = row.get("name") if engine == "google_immersive_product" else row.get("source")
+        retailer = row.get("name") if engine in ("google_immersive_product", "google_product") else row.get("source")
         cid = identity(metadata["id"], engine, index, url, title, price)
         problems = []
         if not valid_price:
@@ -62,6 +62,9 @@ def candidates(envelope):
                       "candidate_id": cid, "source_type": "snapshot", "source_observed_at": observed.isoformat(),
                       "fetched_at": fetched.isoformat(), "target_product_id": envelope["target_product_id"],
                       "source_record_index": index}
+        if engine == "google_product" and envelope["request"].get("product_id"):
+            # Trace which Google Shopping product the detail lookup targeted.
+            provenance["lookup_product_id"] = str(envelope["request"]["product_id"])
         result.append({"candidate_id": cid, "target_product_id": envelope["target_product_id"],
                        "source_product_id": str(row.get("product_id") or metadata["id"]),
                        "title": title, "retailer": retailer or "", "price": float(price) if valid_price else None,
