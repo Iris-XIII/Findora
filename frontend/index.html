@@ -44,6 +44,7 @@
     .mode-control { display: grid; gap: 4px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .8px; text-transform: uppercase; }
     .mode-control select { min-width: 150px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: #ffffffdc; color: #303b54; font: inherit; letter-spacing: 0; text-transform: none; }
     .mode-notice { margin: 0 0 20px; padding: 11px 14px; border: 1px solid #dce2f0; border-radius: 10px; background: #eef2fb; color: #4f5d7a; font-size: 12px; line-height: 1.5; }
+    .public-demo-banner { position: sticky; top: 0; z-index: 50; margin: 0; border-radius: 0; text-align: center; padding: 10px 14px; border-bottom: 1px solid #d9b84a; background: #fff1c2; color: #4d3f12; font-size: 13px; font-weight: 750; line-height: 1.45; }
     .mode-notice.demo-notice { border-color: #e8dcae; background: #fff7db; color: #675a34; }
     .notice-line { margin: 0; }
     .notice-line + .notice-line { margin-top: 4px; }
@@ -300,6 +301,7 @@
   </style>
 </head>
 <body>
+  <p class="public-demo-banner" id="public-demo-banner" role="note" hidden>Interactive demo — fictional products and prices. No live retailer pricing.</p>
   <section class="onboarding" id="onboarding" aria-labelledby="setup-title">
     <div class="onboarding-card">
       <a class="wordmark" href="#" aria-label="Findora home">findora<span>.</span></a>
@@ -589,6 +591,8 @@
     // These are public build-time settings; never put credentials in VITE_* variables.
     const ENV_API_URL = '%VITE_API_URL%';
     const ENV_DEFAULT_MODE = '%VITE_DEFAULT_MODE%';
+    // Public static build (VITE_PUBLIC_DEMO=true): Clothing demo only, no API calls, no mode switch.
+    const ENV_PUBLIC_DEMO = '%VITE_PUBLIC_DEMO%';
     function configValue(value) {
       const text = typeof value === 'string' ? value.trim() : '';
       return text && !(text.startsWith('%') && text.endsWith('%')) ? text : '';
@@ -617,6 +621,7 @@
       const text = configValue(value).toLowerCase();
       return text === 'api' || text === 'demo' ? text : '';
     }
+    const PUBLIC_DEMO = configValue(ENV_PUBLIC_DEMO).toLowerCase() === 'true';
     const API = resolveApiUrl();
     const DEFAULT_BUDGET = 300;
     const $ = (id) => document.getElementById(id);
@@ -777,6 +782,7 @@
 
     function loadMode() {
       // Priority: ?mode=api|demo in the URL > choice saved from the dropdown > VITE_DEFAULT_MODE > demo.
+      if (PUBLIC_DEMO) return 'demo';
       let urlMode = '';
       try {
         urlMode = normalizeMode(new URLSearchParams(location.search).get('mode'));
@@ -827,6 +833,7 @@
     }
 
     async function apiGet(path, signal) {
+      if (PUBLIC_DEMO) throw new Error('the live API is not available in this public demo');
       const response = await fetch(`${API}${path}`, { signal });
       if (!response.ok) {
         let detail = '';
@@ -1074,7 +1081,7 @@
       state.searchController?.abort();
       state.detailController?.abort();
       state.catalogController?.abort();
-      state.mode = mode === 'api' ? 'api' : 'demo';
+      state.mode = mode === 'api' && !PUBLIC_DEMO ? 'api' : 'demo';
       state.catalog = null;
       state.discoverSupported = null;
       resetDiscoverGroups();
@@ -2702,6 +2709,11 @@
     document.querySelectorAll('[data-view]').forEach((button) => {
       button.addEventListener('click', () => showView(button.dataset.view));
     });
+    if (PUBLIC_DEMO) {
+      $('public-demo-banner').hidden = false;
+      $('mode-select').closest('.mode-control').hidden = true;
+      $('mode-select').disabled = true;
+    }
     $('mode-select').addEventListener('change', () => setMode($('mode-select').value));
     $('detail-save-button').addEventListener('click', () => {
       if (state.currentProduct) toggleSaved(state.currentProduct);

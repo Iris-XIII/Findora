@@ -271,3 +271,9 @@ Smoke checks: `curl -s localhost:8000/health` and `curl -s 'localhost:8000/produ
 - Status wording now Price tracking pending. Backend tests: 42 passed; diff check clean.
 - Node/npm unavailable on this VM, so frontend build/browser verification not performed.
 - Change lives on codex/amazon-integration; deployment is not yet verified.
+
+## Public static demo (branch `iris/public-demo`, not deployed)
+- Build flag `VITE_PUBLIC_DEMO=true` (`npm run build:public`): page locked to Clothing demo mode (URL `?mode=` and saved choice ignored), data-source switch hidden, `apiGet` throws without fetching, sticky banner "Interactive demo — fictional products and prices. No live retailer pricing." Unset flag = unchanged behavior; the Databricks App build keeps the placeholder literal (flag off).
+- `frontend/vercel.json`: Vite preset, `npm ci`, `npm run build:public`, output `dist`; Vercel Root Directory = `frontend`.
+- Tests: public-demo headless Chrome (fresh incognito profile, static `dist/` server) 14/14 VERIFIED: onboarding, demo search, details, switching all 5 products, save 2 items, budget $75, profile, reload persistence, `?mode=api` ignored, zero requests outside the static origin, 390px mobile, no console errors. Full regression `run-all.sh` ALL SUITES PASSED. Secret scan of `dist/index.html`: 0 hits.
+- Next: user approval → push branch, import repo in Vercel with Root Directory `frontend`, verify the public URL in an incognito window.
