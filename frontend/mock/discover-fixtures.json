@@ -1,0 +1,70 @@
+{
+  "_notice": "MOCK FIXTURES ONLY. Synthetic discovery responses for frontend development and tests. Retailers, titles, prices, and links are fictional (example.com placeholders) and are NOT real listings or observations. Served only by frontend/scripts/mock-api.mjs.",
+  "observed_at": "2026-11-15T12:00:00Z",
+  "scenarios": [
+    {
+      "name": "discovery-unavailable",
+      "match": ["mock-unavailable"],
+      "discovery_status": "unavailable",
+      "discovered": []
+    },
+    {
+      "name": "rate-limited",
+      "match": ["mock-ratelimit"],
+      "discovery_status": "rate_limited",
+      "discovered": []
+    },
+    {
+      "name": "server-error",
+      "match": ["mock-error"],
+      "http_status": 503,
+      "detail": "Databricks data is unavailable; retry later."
+    },
+    {
+      "name": "malformed-candidates",
+      "match": ["mock-malformed"],
+      "discovery_status": "ok",
+      "discovered": [
+        null,
+        7,
+        "not an object",
+        {"title": null, "retailer": "Nameless Store (mock)"},
+        {"candidate_id": "discovered:../../escape", "title": "MOCK Odd-ID Windbreaker", "retailer": "Example Outfitters (mock)", "listed_price": "12.00", "currency": "USD", "url": "javascript:alert(1)", "observed_at": "not a date", "provenance": "serpapi_google_shopping"},
+        {"candidate_id": "discovered:mock-eur-scarf", "title": "MOCK Euro-Priced Wool Scarf", "retailer": "Example Boutique (mock)", "listed_price": 30, "currency": "EUR", "url": "https://example.com/mock/scarf", "provenance": "serpapi_google_shopping"}
+      ]
+    },
+    {
+      "name": "hoodies",
+      "match": ["hoodie", "sweatshirt", "fleece", "crewneck"],
+      "discovery_status": "ok",
+      "discovered": [
+        {"candidate_id": "discovered:mock-hoodie-1", "title": "MOCK Example Heavyweight Pullover Hoodie — Black, M", "retailer": "Example Outfitters (mock)", "listed_price": 39.5, "currency": "USD", "url": "https://example.com/mock/heavyweight-hoodie", "url_kind": "merchant", "provenance": "serpapi_google_shopping", "verification": "unverified", "problems": []},
+        {"candidate_id": "discovered:mock-hoodie-2", "title": "MOCK Example Fleece Zip Hoodie", "retailer": "Sample Supply Co. (mock)", "listed_price": 42.0, "currency": "USD", "url": "https://www.google.com/url?q=mock-listing", "url_kind": "google_listing", "provenance": "serpapi_google_shopping", "verification": "unverified", "problems": ["merchant_redirect_requires_resolution"]},
+        {"candidate_id": "discovered:mock-hoodie-3", "title": "MOCK Example Crewneck Sweatshirt (price not shown)", "retailer": "Demo Market (mock)", "listed_price": null, "currency": null, "url": null, "url_kind": "none", "provenance": "serpapi_google_shopping", "verification": "unverified", "problems": ["missing_or_invalid_price"]}
+      ]
+    },
+    {
+      "name": "outerwear",
+      "match": ["parka", "jacket", "coat", "rain", "shell"],
+      "discovery_status": "ok",
+      "discovered": [
+        {"candidate_id": "discovered:mock-parka-1", "title": "MOCK Example Insulated Hooded Parka — Black, M", "retailer": "Example Outfitters (mock)", "listed_price": 189.99, "currency": "USD", "url": "https://example.com/mock/insulated-parka", "url_kind": "merchant", "provenance": "serpapi_google_shopping", "verification": "unverified", "problems": []},
+        {"candidate_id": "discovered:mock-parka-2", "title": "MOCK Example Packable Rain Shell", "retailer": "Sample Supply Co. (mock)", "listed_price": 74.0, "currency": "USD", "url": "https://example.com/mock/rain-shell", "url_kind": "merchant", "provenance": "serpapi_google_shopping", "verification": "unverified", "problems": []}
+      ]
+    },
+    {
+      "name": "headphones",
+      "match": ["headphone", "headphones", "earbuds", "earbud"],
+      "discovery_status": "ok",
+      "discovered": [
+        {"candidate_id": "discovered:mock-audio-1", "title": "MOCK Example Noise-Cancelling Headphones", "retailer": "Example Electronics (mock)", "listed_price": 149.0, "currency": "USD", "url": "https://example.com/mock/nc-headphones", "url_kind": "merchant", "provenance": "serpapi_google_shopping", "verification": "unverified", "problems": []},
+        {"candidate_id": "discovered:mock-audio-2", "title": "MOCK Example Sport Earbuds", "retailer": "Demo Market (mock)", "listed_price": 59.99, "currency": "USD", "url": "https://example.com/mock/sport-earbuds", "url_kind": "merchant", "provenance": "serpapi_google_shopping", "verification": "unverified", "problems": []}
+      ]
+    }
+  ],
+  "default": {
+    "discovery_status": "ok",
+    "discovered": [],
+    "notices": ["MOCK: no recorded discovery fixtures match this query."]
+  }
+}

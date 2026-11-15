@@ -43,6 +43,8 @@
     .mode-control select { min-width: 150px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: #ffffffdc; color: #303b54; font: inherit; letter-spacing: 0; text-transform: none; }
     .mode-notice { margin: 0 0 20px; padding: 11px 14px; border: 1px solid #dce2f0; border-radius: 10px; background: #eef2fb; color: #4f5d7a; font-size: 12px; line-height: 1.5; }
     .mode-notice.demo-notice { border-color: #e8dcae; background: #fff7db; color: #675a34; }
+    .notice-line { margin: 0; }
+    .notice-line + .notice-line { margin-top: 4px; }
     .eyebrow { margin: 0 0 9px; color: var(--accent); font-size: 10px; font-weight: 850; letter-spacing: 1.8px; text-transform: uppercase; }
     h1, .hero h2, .section-heading h2 { font-family: "Druk Condensed Super", "Druk Condensed", "Arial Narrow", Impact, sans-serif; font-stretch: condensed; font-weight: 900; letter-spacing: -.025em; text-transform: uppercase; }
     h1 { max-width: 680px; margin: 0; font-size: clamp(31px, 4vw, 45px); line-height: 1.08; }
@@ -204,6 +206,29 @@
     .collection-row .details { flex: 1; min-width: 0; }
     .collection-row .details small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
     .collection-row > b { color: var(--accent-dark); font-size: 13px; white-space: nowrap; }
+    /* Discover: unverified items (saved links, manual entries, discovered listings) */
+    .group-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 24px 0 10px; font-size: 15px; }
+    .group-heading small { color: var(--muted); font-size: 11px; font-weight: 600; }
+    .product-note { display: block; margin: -4px 0 10px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .candidate-price { display: block; margin: -4px 0 6px; color: var(--accent); font-size: 14px; font-weight: 750; }
+    .candidate-footer { display: flex; justify-content: space-between; gap: 8px; padding: 0 16px 15px; color: var(--muted); font-size: 11px; }
+    .candidate-footer a { color: var(--accent); font-weight: 700; }
+    .url-save, .local-listing { display: grid; justify-items: start; gap: 6px; margin: 0 0 14px; padding: 14px 16px; border: 1px dashed #cfd6cc; border-radius: 13px; background: #fafbf9; }
+    .url-save > b, .local-listing > b { font-size: 14px; }
+    .local-listing > b.listing-price { color: var(--accent); font-size: 18px; }
+    .url-save > span, .local-listing > span { color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .local-listing p { margin: 0; color: #6c665b; font-size: 12px; line-height: 1.6; }
+    .local-listing a { color: var(--accent); font-size: 12px; font-weight: 700; }
+    .url-save-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .manual-entry { margin-top: 20px; padding: 12px 16px; border: 1px solid var(--line); border-radius: 13px; background: white; }
+    .manual-entry summary { cursor: pointer; color: var(--accent); font-size: 13px; font-weight: 750; }
+    .manual-entry .empty-note { padding-bottom: 0; }
+    .manual-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+    .manual-form .primary, .manual-form .form-message { grid-column: 1 / -1; justify-self: start; }
+    .similar-open { display: flex; justify-content: space-between; gap: 12px; width: 100%; padding: 12px 0; border: 0; border-top: 1px solid #edf0eb; background: transparent; color: inherit; text-align: left; }
+    .similar-open b { font-size: 13px; }
+    .similar-open span, .similar-open small { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .similar-open > b { color: var(--accent); font-size: 14px; white-space: nowrap; }
     .view-prompt { max-width: 700px; margin: 30px auto; padding: 26px; border: 1px solid var(--line); border-radius: 16px; background: white; text-align: center; }
     .view-prompt p { color: var(--muted); line-height: 1.6; }
     .page-view[hidden], [hidden] { display: none !important; }
@@ -231,7 +256,7 @@
       .nav-symbol { font-size: 17px; }
       .sidebar-card, .sidebar-footer, .tagline { display: none; }
       main { padding: 22px 16px 48px; }
-      .product-grid, .detail-grid, .stats { grid-template-columns: 1fr; }
+      .product-grid, .detail-grid, .stats, .manual-form { grid-template-columns: 1fr; }
       .profile-page-grid, .form-grid { grid-template-columns: 1fr; }
       .product-image { height: 185px; }
       .hero { padding: 20px; }
@@ -389,8 +414,13 @@
           <span class="result-count" id="saved-total"></span>
         </div>
         <div class="collection-filters" id="collection-filters" role="group" aria-label="Filter saved clothing by category"></div>
-        <p class="empty-note">Your saved items are stored in this browser.</p>
+        <p class="empty-note">Your saved items are stored in this browser. Saved links, discovered listings, and items you add are unverified and never count toward verified prices.</p>
         <div class="saved-list" id="saved-list"></div>
+        <details class="manual-entry" id="manual-entry-saved">
+          <summary>Add a product manually or paste a retailer link</summary>
+          <p class="empty-note">Saved immediately as an unverified item. Links are stored, not opened or checked by Findora.</p>
+          <div id="manual-form-saved"></div>
+        </details>
         <div id="storage-message"></div>
       </section>
       <section class="page-view" id="price-intelligence" aria-label="Price intelligence" hidden>
@@ -399,8 +429,25 @@
             <div><p class="eyebrow">CATALOG RESULTS</p><h2 id="price-results-title">Search clothing</h2></div>
             <span class="result-count" id="price-result-count"></span>
           </div>
+          <div id="discover-notices" aria-live="polite"></div>
+          <div id="url-save-slot"></div>
           <div id="price-search-message" aria-live="polite"></div>
+          <h3 class="group-heading" id="catalog-group-heading" hidden>In Findora catalog <small>Possible matches — confirm the exact item and variant before relying on them</small></h3>
           <div class="product-grid" id="price-product-grid"></div>
+          <section id="discovered-group" aria-labelledby="discovered-group-title" hidden>
+            <h3 class="group-heading" id="discovered-group-title">Discovered listings <span class="tag tag-unverified">Unverified</span> <small>Web search results — not Findora-verified prices, history, or advice</small></h3>
+            <div id="discovered-message"></div>
+            <div class="product-grid" id="discovered-grid"></div>
+          </section>
+          <section id="similar-group" aria-labelledby="similar-group-title" hidden>
+            <h3 class="group-heading" id="similar-group-title">Similar in catalog <small>Alternatives, not the item you searched for</small></h3>
+            <div class="similar-list" id="discover-similar-list"></div>
+          </section>
+          <details class="manual-entry" id="manual-entry-results">
+            <summary>Can’t find it? Add it manually</summary>
+            <p class="empty-note">Saved to My Collection as an unverified item you added. Findora does not check its price or availability.</p>
+            <div id="manual-form-results"></div>
+          </details>
         </section>
         <div class="view-prompt" id="price-prompt">
           <p class="eyebrow">PRICE INTELLIGENCE</p>
@@ -648,6 +695,15 @@
       other: 'Other',
     };
 
+    // ---- Unverified local items: saved links, manual entries, discovered listings ----
+    // Stored as full snapshots in this browser, keyed by a prefixed id. The ':' can never appear in a
+    // canonical Gold product_id, so these never collide with catalog products and never trigger
+    // /products/{id} calls, verified price calculations, or buy/wait advice.
+    const LOCAL_STORE_KEY = 'findora-saved-discoveries';
+    const LOCAL_KINDS = { url: 'Saved link', manual: 'Added by you', discovered: 'Unverified discovery' };
+    const LOCAL_ID_PATTERN = /^(url|manual|discovered):[A-Za-z0-9_-]{1,64}$/;
+    state.localItems = loadLocalItems();
+
     function node(tag, className, text) {
       const element = document.createElement(tag);
       if (className) element.className = className;
@@ -872,6 +928,8 @@
       $('mode-select').value = state.mode;
       updateModeNotice();
       renderProfileForm();
+      renderManualForm($('manual-form-results'));
+      renderManualForm($('manual-form-saved'));
       renderSaved();
       renderBudget();
       showView('home');
@@ -991,6 +1049,8 @@
       state.catalogController?.abort();
       state.mode = mode === 'api' ? 'api' : 'demo';
       state.catalog = null;
+      state.discoverSupported = null;
+      resetDiscoverGroups();
       syncModeUrl(state.mode);
       state.productCache = Object.create(null);
       state.savedPrices = Object.create(null);
@@ -1107,10 +1167,417 @@
       return Boolean(url && !/(^|\.)example\.(com|org|net)$/i.test(url.hostname));
     }
 
+    function isLocalId(id) {
+      return typeof id === 'string' && LOCAL_ID_PATTERN.test(id);
+    }
+
+    function cleanText(value, max) {
+      return typeof value === 'string' && value.trim() ? value.replace(/\s+/g, ' ').trim().slice(0, max) : null;
+    }
+
+    function shortHash(text) {
+      // Two FNV-1a passes with different seeds → 16 hex chars; used only to make stable local ids.
+      const pass = (seed) => {
+        let hash = seed;
+        for (let i = 0; i < text.length; i++) {
+          hash ^= text.charCodeAt(i);
+          hash = Math.imul(hash, 0x01000193) >>> 0;
+        }
+        return hash.toString(16).padStart(8, '0');
+      };
+      return pass(0x811c9dc5) + pass(0x01234567);
+    }
+
+    function userProductUrl(value) {
+      // A retailer URL the user may save. Findora stores it but never fetches or verifies the page.
+      const text = typeof value === 'string' ? value.trim() : '';
+      if (!text || text.length > 2048 || !/^https?:\/\//i.test(text)) return null;
+      const url = safeHttpUrl(text);
+      if (!url || url.username || url.password) return null;
+      const host = url.hostname.toLowerCase();
+      if (!host.includes('.') || host.includes(':') || host === 'localhost' || /\.(local|localhost|internal)$/.test(host) || /^[\d.]+$/.test(host)) return null;
+      url.hash = '';
+      return url;
+    }
+
+    function isPlaceholderHost(url) {
+      return /(^|\.)example\.(com|org|net)$/i.test(url.hostname);
+    }
+
+    function urlWords(url) {
+      // Readable words from the URL path only (e.g. ".../mens-marquam-peak-parka-2088121.html").
+      const skip = new Set(['p', 'dp', 'ip', 'product', 'products', 'item', 'items', 'html', 'htm', 'shop', 'www', 'en', 'us', 'en-us', 'pd', 's']);
+      let path = url.pathname;
+      try { path = decodeURIComponent(path); } catch { /* keep raw path */ }
+      return path.split(/[^A-Za-z0-9]+/)
+        .filter((word) => word && !skip.has(word.toLowerCase()) && (!/^\d+$/.test(word) || word.length >= 4) && word.length <= 30)
+        .slice(0, 12)
+        .join(' ');
+    }
+
+    function titleCase(text) {
+      return text.replace(/\b([a-z])([a-z]*)/g, (match, first, rest) => first.toUpperCase() + rest);
+    }
+
+    function itemCategory(text) {
+      // Free-text titles: check outerwear nouns first so "Hooded Parka" is a coat, not a hoodie.
+      // Otherwise reuse the collection's existing keyword rules (unchanged for catalog products).
+      if (/\b(parka|parkas|jacket|jackets|coat|coats|windbreaker|anorak|raincoat)\b/i.test(text || '')) return 'outerwear';
+      return collectionCategory({ category: text || '' }) || 'other';
+    }
+
+    function sanitizeSimilar(items) {
+      return asRecords(items)
+        .filter((item) => typeof item.product_id === 'string' && item.product_id && !isLocalId(item.product_id))
+        .slice(0, 3)
+        .map((item) => ({
+          product_id: item.product_id.slice(0, 120),
+          title: cleanText(item.title, 200) || 'Untitled product',
+          brand: cleanText(item.brand, 100),
+          price: hasUsablePrice(item) ? item.price : null,
+          reason: cleanText(item.reason, 200),
+        }));
+    }
+
+    function sanitizeLocalItem(raw) {
+      // Rebuild every stored snapshot from validated fields; anything malformed is dropped.
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw) || !isLocalId(raw.product_id)) return null;
+      const kind = raw.product_id.split(':')[0];
+      const title = cleanText(raw.title, 200);
+      if (!title || raw.kind !== kind) return null;
+      const url = typeof raw.url === 'string' ? (userProductUrl(raw.url) || googleListingUrl(raw.url)) : null;
+      const priceSource = ['listing', 'user'].includes(raw.price_source) ? raw.price_source : null;
+      const price = priceSource && typeof raw.price === 'number' && Number.isFinite(raw.price) && raw.price >= 0 && raw.price <= 1000000 ? raw.price : null;
+      return {
+        product_id: raw.product_id,
+        kind,
+        title,
+        retailer: cleanText(raw.retailer, 100),
+        url: url ? url.href : null,
+        url_kind: url ? (googleListingUrl(url.href) ? 'google_listing' : 'merchant') : 'none',
+        price,
+        currency: price !== null ? 'USD' : null,
+        price_source: price !== null ? priceSource : null,
+        observed_at: hasTimestamp(raw) ? raw.observed_at : null,
+        saved_at: typeof raw.saved_at === 'string' && Number.isFinite(Date.parse(raw.saved_at)) ? raw.saved_at : null,
+        provenance: cleanText(raw.provenance, 120) || LOCAL_KINDS[kind],
+        mock: raw.mock === true,
+        interest: Object.hasOwn(categoryLabels, raw.interest) ? raw.interest : itemCategory(title),
+        category: cleanText(raw.category, 60),
+        query: cleanText(raw.query, 300),
+        similar: sanitizeSimilar(raw.similar),
+      };
+    }
+
+    function loadLocalItems() {
+      const items = Object.create(null);
+      try {
+        const raw = JSON.parse(localStorage.getItem(LOCAL_STORE_KEY) || '{}');
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return items;
+        for (const [id, value] of Object.entries(raw)) {
+          const item = sanitizeLocalItem(value);
+          if (item && item.product_id === id) items[id] = item;
+        }
+      } catch {
+        // Unreadable storage: start with no local items.
+      }
+      return items;
+    }
+
+    function persistLocalItems() {
+      try {
+        localStorage.setItem(LOCAL_STORE_KEY, JSON.stringify(state.localItems));
+        $('storage-message').replaceChildren();
+        return true;
+      } catch {
+        showMessage($('storage-message'), 'Could not save this item in browser storage.', true);
+        return false;
+      }
+    }
+
+    function localItemList() {
+      return Object.values(state.localItems).sort((a, b) => String(a.saved_at).localeCompare(String(b.saved_at)));
+    }
+
+    function isSaved(product) {
+      return isLocalId(product?.product_id) ? Boolean(state.localItems[product.product_id]) : state.savedIds.includes(product?.product_id);
+    }
+
+    function addLocalItem(item) {
+      const clean = sanitizeLocalItem({ ...item, saved_at: new Date().toISOString() });
+      if (!clean) return false;
+      if (!state.localItems[clean.product_id]) {
+        state.localItems[clean.product_id] = clean;
+        persistLocalItems();
+      }
+      syncSaveButtons(clean);
+      renderSaved();
+      renderBudget();
+      return true;
+    }
+
+    function removeLocalItem(id) {
+      const item = state.localItems[id];
+      delete state.localItems[id];
+      persistLocalItems();
+      if (item) syncSaveButtons(item);
+      renderSaved();
+      renderBudget();
+    }
+
+    function googleListingUrl(value) {
+      // Google Shopping redirect/listing links are shown as "listing on Google Shopping", never as the merchant.
+      const url = safeHttpUrl(value);
+      if (!url || url.protocol !== 'https:' || !/^(www\.)?google\.com$/i.test(url.hostname)) return null;
+      return /^\/(url|goto|shopping)/.test(url.pathname) ? url : null;
+    }
+
+    function snapshotFromUrl(url, query = null) {
+      const host = url.hostname.replace(/^www\./i, '');
+      const words = urlWords(url);
+      return {
+        product_id: `url:${shortHash(url.href)}`,
+        kind: 'url',
+        title: words ? titleCase(words.toLowerCase()) : host,
+        retailer: host,
+        url: url.href,
+        price: null,
+        price_source: null,
+        observed_at: null,
+        provenance: 'Link you entered (stored, not opened or verified)',
+        interest: itemCategory(words),
+        query,
+        similar: [],
+      };
+    }
+
+    function snapshotFromCandidate(candidate, response) {
+      const title = cleanText(candidate.title, 200);
+      if (!title) return null;
+      const rawId = typeof candidate.candidate_id === 'string' ? candidate.candidate_id : '';
+      const id = isLocalId(rawId) && rawId.startsWith('discovered:') ? rawId : `discovered:${shortHash(`${rawId}|${title}|${candidate.url || ''}`)}`;
+      const usd = candidate.currency === 'USD' && typeof candidate.listed_price === 'number' && Number.isFinite(candidate.listed_price) && candidate.listed_price > 0;
+      const provenance = candidate.provenance === 'serpapi_google_shopping'
+        ? 'Google Shopping search result via SerpAPI'
+        : cleanText(candidate.provenance, 80) || 'Web search result';
+      return sanitizeLocalItem({
+        product_id: id,
+        kind: 'discovered',
+        title,
+        retailer: cleanText(candidate.retailer, 100),
+        url: typeof candidate.url === 'string' ? candidate.url : null,
+        price: usd ? candidate.listed_price : null,
+        price_source: usd ? 'listing' : null,
+        observed_at: candidate.observed_at,
+        provenance: response?.mock === true ? `MOCK fixture · ${provenance}` : provenance,
+        mock: response?.mock === true,
+        interest: itemCategory(title),
+        query: cleanText(response?.query, 300),
+        similar: response?.similar,
+      });
+    }
+
+    function snapshotFromManual(fields) {
+      const title = cleanText(fields.title, 200);
+      if (!title) return { error: 'Enter a product name.' };
+      let url = null;
+      if (cleanText(fields.url, 2048)) {
+        url = userProductUrl(fields.url);
+        if (!url) return { error: 'Enter a full http(s) retailer product URL, or leave the URL blank.' };
+      }
+      let price = null;
+      if (String(fields.price ?? '').trim() !== '') {
+        price = Number(fields.price);
+        if (!Number.isFinite(price) || price < 0 || price > 100000) return { error: 'Enter a price from $0 to $100,000, or leave it blank.' };
+      }
+      const id = globalThis.crypto?.randomUUID ? crypto.randomUUID().replace(/-/g, '') : shortHash(`${title}|${Date.now()}|${Math.random()}`);
+      return {
+        item: {
+          product_id: `manual:${id}`,
+          kind: 'manual',
+          title,
+          retailer: cleanText(fields.retailer, 100) || (url ? url.hostname.replace(/^www\./i, '') : null),
+          url: url ? url.href : null,
+          price,
+          price_source: price !== null ? 'user' : null,
+          observed_at: null,
+          provenance: 'Entered by you (unverified)',
+          interest: Object.hasOwn(categoryLabels, fields.category) ? fields.category : itemCategory(title),
+          similar: [],
+        },
+      };
+    }
+
+    function localPriceText(item) {
+      if (item.price === null) return 'No price recorded';
+      if (item.price_source === 'user') return `${formatPrice(item.price)} · price you entered (unverified)`;
+      return `Listed ${formatPrice(item.price)} · unverified${item.observed_at ? `, observed ${formatDate(item.observed_at)}` : ''}`;
+    }
+
+    function localLink(item) {
+      // Returns {href, text} or null. Placeholder (example.*) hosts in mock data are never linked.
+      if (!item.url) return null;
+      const google = googleListingUrl(item.url);
+      if (google) return { href: google.href, text: 'View listing on Google Shopping ↗' };
+      const url = userProductUrl(item.url);
+      if (!url || isPlaceholderHost(url)) return null;
+      return { href: url.href, text: `${url.hostname.replace(/^www\./i, '')} ↗` };
+    }
+
+    function appendLocalLink(container, item) {
+      const link = localLink(item);
+      if (!link) {
+        if (item.url) container.append(node('span', '', 'Placeholder link in mock data — not a real store'));
+        return;
+      }
+      const anchor = node('a', '', link.text);
+      anchor.href = link.href;
+      anchor.target = '_blank';
+      anchor.rel = 'noreferrer noopener';
+      container.append(anchor);
+    }
+
+    function renderLocalListing(target, item) {
+      const card = node('div', 'local-listing');
+      const tags = node('div', 'offer-tags');
+      tags.append(node('span', 'tag tag-unverified', LOCAL_KINDS[item.kind]));
+      if (item.mock) tags.append(node('span', 'tag tag-demo', 'Mock fixture'));
+      card.append(tags);
+      card.append(node('b', 'listing-price', item.price === null ? 'No price recorded' : formatPrice(item.price)));
+      card.append(node('span', '', [item.retailer || 'Retailer not provided', item.provenance].join(' · ')));
+      if (item.price_source === 'listing') {
+        card.append(node('p', '', `Listed price from a web search result${item.observed_at ? `, observed ${formatDate(item.observed_at)}` : ''}. Not a Findora-verified offer: price, variant, and availability are unconfirmed.`));
+      } else if (item.price_source === 'user') {
+        card.append(node('p', '', 'Price you entered. Findora has not verified it.'));
+      } else {
+        card.append(node('p', '', 'Findora has no price for this item.'));
+      }
+      appendLocalLink(card, item);
+      target.append(card);
+    }
+
+    function openLocalItem(item) {
+      // Detail view for an unverified item: no /offers, /history, or /advice requests.
+      state.detailController?.abort();
+      state.detailController = null;
+      state.detail = null;
+      state.currentProduct = item;
+      updateSaveButton($('detail-save-button'), item);
+      showView('price-intelligence');
+      $('price-prompt').hidden = true;
+      $('detail-section').hidden = false;
+      $('detail-loading').hidden = true;
+      $('detail-title').textContent = item.title;
+      $('detail-subtitle').textContent = [item.retailer, categoryName(item.interest)].filter(Boolean).join(' · ');
+      $('product-description').textContent = 'Not tracked by Findora yet — there is no verified price, price history, or buy/wait guidance for this item.';
+      $('product-description').hidden = false;
+      $('product-status').className = 'tag tag-unverified';
+      $('product-status').textContent = LOCAL_KINDS[item.kind];
+      $('detail-evidence-meta').textContent = item.observed_at
+        ? `Listing observed ${formatDate(item.observed_at)} · unverified`
+        : item.saved_at ? `Saved ${formatDate(item.saved_at)} · unverified` : 'Not saved yet · unverified';
+      $('offers-count').textContent = '';
+      $('history-count').textContent = '';
+      $('offers-content').replaceChildren();
+      renderLocalListing($('offers-content'), item);
+      $('history-content').replaceChildren(node('p', 'empty-note', 'Not tracked by Findora — no verified price history exists for this item.'));
+      renderSimilar(item.similar || []);
+      const advice = node('div', 'advice-card');
+      advice.append(label('insufficient'), node('h4', '', 'INSUFFICIENT DATA'));
+      advice.append(node('p', '', 'Unverified items are never used for buy/wait guidance. Guidance requires verified exact-match offers and at least 3 dates of real price history.'));
+      $('advice-content').replaceChildren(advice);
+      $('detail-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderManualForm(container, prefill = '') {
+      container.replaceChildren();
+      const form = node('form', 'manual-form');
+      const field = (text, input) => {
+        const wrapper = node('label', 'form-field', text);
+        wrapper.append(input);
+        return wrapper;
+      };
+      const prefillUrl = userProductUrl(prefill);
+      const name = node('input');
+      name.name = 'title';
+      name.required = true;
+      name.maxLength = 200;
+      name.value = prefillUrl ? snapshotFromUrl(prefillUrl).title : (prefill || '').slice(0, 200);
+      const retailer = node('input');
+      retailer.name = 'retailer';
+      retailer.maxLength = 100;
+      if (prefillUrl) retailer.value = prefillUrl.hostname.replace(/^www\./i, '');
+      const url = node('input');
+      url.name = 'url';
+      url.type = 'url';
+      url.maxLength = 2048;
+      url.placeholder = 'https://…';
+      if (prefillUrl) url.value = prefillUrl.href;
+      const price = node('input');
+      price.name = 'price';
+      price.type = 'number';
+      price.min = '0';
+      price.max = '100000';
+      price.step = '0.01';
+      const category = node('select');
+      category.name = 'category';
+      category.append(new Option('Detect from name', ''));
+      Object.entries(categoryLabels).forEach(([value, text]) => category.append(new Option(text, value)));
+      const submit = node('button', 'primary', 'Save to My Collection');
+      submit.type = 'submit';
+      const message = node('p', 'form-message');
+      message.setAttribute('role', 'status');
+      form.append(field('Product name *', name), field('Retailer', retailer), field('Product URL', url),
+        field('Price you saw (USD, optional)', price), field('Category', category), submit, message);
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const result = snapshotFromManual({ title: name.value, retailer: retailer.value, url: url.value, price: price.value, category: category.value });
+        if (result.error) {
+          message.className = 'form-message';
+          message.textContent = result.error;
+          return;
+        }
+        if (!addLocalItem(result.item)) {
+          message.className = 'form-message';
+          message.textContent = 'This item could not be saved.';
+          return;
+        }
+        form.reset();
+        message.className = 'form-message success';
+        message.textContent = `Saved “${result.item.title}” to My Collection as an unverified item you added.`;
+      });
+      container.append(form);
+    }
+
+    function renderUrlSaveCard(url, query) {
+      const slot = $('url-save-slot');
+      slot.replaceChildren();
+      if (!url) return;
+      const item = snapshotFromUrl(url, query);
+      const box = node('div', 'url-save');
+      box.append(node('p', 'eyebrow', 'RETAILER LINK'));
+      box.append(node('b', '', item.title));
+      box.append(node('span', '', `${item.retailer} · Save it now as an unverified link. Findora stores the URL but does not open the page or verify its price.`));
+      const actions = node('div', 'url-save-actions');
+      const save = node('button', 'outline');
+      save.type = 'button';
+      save.dataset.saveStyle = 'text';
+      updateSaveButton(save, item);
+      save.addEventListener('click', () => toggleSaved(item));
+      const view = node('button', 'outline', 'View details');
+      view.type = 'button';
+      view.addEventListener('click', () => openLocalItem(state.localItems[item.product_id] || item));
+      actions.append(save, view);
+      box.append(actions);
+      slot.append(box);
+    }
+
     function renderSaved() {
-      $('saved-stat').textContent = `${state.savedIds.length} saved`;
+      const localItems = localItemList();
+      const savedCount = state.savedIds.length + localItems.length;
+      $('saved-stat').textContent = `${savedCount} saved`;
       $('budget-stat').textContent = formatPrice(state.budget);
-      $('saved-total').textContent = `${state.savedIds.length} saved`;
+      $('saved-total').textContent = `${savedCount} saved`;
       const filters = $('collection-filters');
       const list = $('saved-list');
       filters.replaceChildren();
@@ -1130,8 +1597,8 @@
         });
         filters.append(button);
       }
-      if (!state.savedIds.length) {
-        list.append(node('p', 'empty-note', 'No saved products yet. Search for clothing and save an item to add it here.'));
+      if (!savedCount) {
+        list.append(node('p', 'empty-note', 'No saved products yet. Search for clothing, paste a retailer link, or add a product manually.'));
         return;
       }
       const visibleIds = state.savedIds.filter((id) => {
@@ -1140,7 +1607,8 @@
           : state.productCache[id];
         return state.collectionFilter === 'all' || collectionCategory(product) === state.collectionFilter;
       });
-      if (!visibleIds.length) {
+      const visibleLocal = localItems.filter((item) => state.collectionFilter === 'all' || collectionCategory(item) === state.collectionFilter);
+      if (!visibleIds.length && !visibleLocal.length) {
         const activeFilter = filterOptions.find(([value]) => value === state.collectionFilter);
         list.append(node('p', 'empty-note', `No saved items in ${activeFilter?.[1] || 'this category'}.`));
         return;
@@ -1164,6 +1632,26 @@
         row.append(icon, details, open, remove);
         list.append(row);
       }
+      for (const item of visibleLocal) {
+        const row = node('div', 'collection-row');
+        row.dataset.localId = item.product_id;
+        row.append(node('div', 'thumb', item.kind === 'manual' ? '✎' : '↗'));
+        const details = node('div', 'details');
+        details.append(node('b', '', item.title));
+        const tags = node('div', 'offer-tags');
+        tags.append(node('span', 'tag tag-unverified', LOCAL_KINDS[item.kind]));
+        if (item.mock) tags.append(node('span', 'tag tag-demo', 'Mock fixture'));
+        details.append(tags);
+        details.append(node('small', '', [item.retailer, localPriceText(item)].filter(Boolean).join(' · ')));
+        const open = node('button', 'outline', 'View details');
+        open.type = 'button';
+        open.addEventListener('click', () => openLocalItem(item));
+        const remove = node('button', 'outline', 'Remove');
+        remove.type = 'button';
+        remove.addEventListener('click', () => removeSaved(item.product_id));
+        row.append(details, open, remove);
+        list.append(row);
+      }
     }
 
     function collectionCategory(product) {
@@ -1179,8 +1667,8 @@
     }
 
     function updateSaveButton(button, product) {
-      const saved = state.savedIds.includes(product.product_id);
-      const detailButton = button.id === 'detail-save-button';
+      const saved = isSaved(product);
+      const detailButton = button.id === 'detail-save-button' || button.dataset.saveStyle === 'text';
       button.dataset.saveProductId = product.product_id;
       button.textContent = detailButton ? (saved ? 'Remove from Collection' : 'Add to Collection') : (saved ? '♥' : '♡');
       button.classList.toggle('saved', saved);
@@ -1197,6 +1685,11 @@
     }
 
     function toggleSaved(product) {
+      if (isLocalId(product.product_id)) {
+        if (state.localItems[product.product_id]) removeLocalItem(product.product_id);
+        else addLocalItem(product);
+        return;
+      }
       const saved = state.savedIds.includes(product.product_id);
       state.savedIds = saved
         ? state.savedIds.filter((id) => id !== product.product_id)
@@ -1215,6 +1708,10 @@
     }
 
     function removeSaved(productId) {
+      if (isLocalId(productId)) {
+        removeLocalItem(productId);
+        return;
+      }
       const product = state.productCache[productId] || DEMO_PRODUCTS.find((item) => item.product_id === productId);
       state.savedIds = state.savedIds.filter((id) => id !== productId);
       delete state.savedPrices[productId];
@@ -1288,7 +1785,8 @@
       $('budget-input').value = state.budget;
       const list = $('budget-list');
       list.replaceChildren();
-      if (!state.savedIds.length) {
+      const localItems = localItemList();
+      if (!state.savedIds.length && !localItems.length) {
         $('budget-total').textContent = 'No saved items';
         $('budget-message').textContent = 'Save products to compare their offers against your budget.';
         $('budget-progress').style.width = '0%';
@@ -1315,6 +1813,10 @@
         $('budget-message').textContent = 'No saved product currently has an exact USD offer, so no total is calculated.';
         $('budget-progress').style.width = '0%';
       }
+      if (localItems.length) {
+        // Unverified items are listed for reference only; the verified total above is unchanged.
+        $('budget-message').textContent += ` ${localItems.length} unverified saved item${localItems.length === 1 ? ' is' : 's are'} listed below but not counted.`;
+      }
       for (const id of state.savedIds) {
         const product = state.productCache[id];
         const offer = state.savedPrices[id];
@@ -1331,9 +1833,24 @@
         row.append(details, node('b', '', offer ? formatPrice(offer.price, offer.currency) : 'Not counted'));
         list.append(row);
       }
+      for (const item of localItems) {
+        const row = node('div', 'collection-row');
+        row.dataset.localId = item.product_id;
+        row.append(node('div', 'thumb', item.kind === 'manual' ? '✎' : '↗'));
+        const details = node('div', 'details');
+        details.append(node('b', '', item.title));
+        const reason = item.price === null
+          ? `${LOCAL_KINDS[item.kind]} · no verified price`
+          : item.price_source === 'user'
+            ? `Price you entered (${formatPrice(item.price)}) — not counted`
+            : `Unverified listing price (${formatPrice(item.price)}) — not counted`;
+        details.append(node('small', '', reason));
+        row.append(details, node('b', '', 'Not counted'));
+        list.append(row);
+      }
     }
 
-    function renderProducts(products, gridId = 'product-grid') {
+    function renderProducts(products, gridId = 'product-grid', noteFor = null) {
       const grid = $(gridId);
       grid.replaceChildren();
       for (const product of products) {
@@ -1361,6 +1878,8 @@
         const badges = node('div', 'product-badges');
         if (product.data_status) badges.append(label(product.data_status));
         copy.append(badges);
+        const note = noteFor?.(product);
+        if (note) copy.append(node('span', 'product-note', note));
         copy.append(node('span', 'product-link', 'Inspect price evidence ↗'));
         open.append(imageArea, copy);
         const save = node('button', 'save-button');
@@ -1384,6 +1903,7 @@
       $('search-button').textContent = 'Searching…';
       $('price-search-message').replaceChildren();
       $('price-product-grid').replaceChildren();
+      resetDiscoverGroups();
       state.products = [];
       $('detail-section').hidden = true;
       $('price-prompt').hidden = false;
@@ -1391,6 +1911,9 @@
       $('price-result-count').textContent = '';
       try {
         const query = $('search-input').value.trim();
+        // A retailer URL can always be saved immediately, in any mode and even if discovery is unavailable.
+        renderUrlSaveCard(userProductUrl(query), query);
+        renderManualForm($('manual-form-results'), query);
         if (!query && state.mode === 'demo') {
           showMessage($('price-search-message'), 'Return to Homepage to use the search bar above.');
           return;
@@ -1419,8 +1942,17 @@
           }
           return;
         }
-        const items = await fetchProducts(query, controller.signal);
+        // Non-empty API queries go to /discover; an API without it (404) falls back to catalog search.
+        const result = query ? await discoverOrSearch(query, controller.signal) : { items: await fetchProducts(query, controller.signal) };
         if (controller.signal.aborted) return;
+        if (result.discovery) {
+          renderDiscovery(result.discovery, query);
+          return;
+        }
+        if (result.fallback) {
+          showMessage($('discover-notices'), 'This API does not offer on-demand discovery yet, so only catalog search results are shown. You can still save a retailer link or add a product manually.');
+        }
+        const items = result.items;
         state.products = items;
         $('price-search-message').replaceChildren();
         if (state.products.length === 0) {
@@ -1445,6 +1977,136 @@
           $('search-button').disabled = false;
           $('search-button').innerHTML = 'Search <span aria-hidden="true">→</span>';
         }
+      }
+    }
+
+    function resetDiscoverGroups() {
+      ['discover-notices', 'url-save-slot', 'discovered-message', 'discovered-grid', 'discover-similar-list'].forEach((id) => $(id).replaceChildren());
+      $('catalog-group-heading').hidden = true;
+      $('discovered-group').hidden = true;
+      $('similar-group').hidden = true;
+    }
+
+    async function discoverOrSearch(query, signal) {
+      if (state.discoverSupported !== false) {
+        try {
+          const body = await apiGet(`/discover?q=${encodeURIComponent(query)}`, signal);
+          state.discoverSupported = true;
+          return { discovery: body };
+        } catch (error) {
+          // Only "route not found" means discovery is unsupported; other errors are shown to the user.
+          if (!(error instanceof ApiError && error.kind === 'http' && error.status === 404)) throw error;
+          state.discoverSupported = false;
+        }
+      }
+      return { items: await fetchProducts(query, signal), fallback: true };
+    }
+
+    const DISCOVERY_STATUS_TEXT = {
+      cached: 'Discovered listings come from a recent cached search.',
+      skipped_catalog_match: 'A likely catalog product was found, so no new web discovery ran.',
+      disabled: 'On-demand discovery is turned off on this API; showing catalog results only.',
+      unavailable: 'On-demand discovery is temporarily unavailable; showing catalog results and similar products only.',
+      rate_limited: 'Discovery rate limit reached — try again in a minute. Showing catalog results only.',
+      budget_exhausted: 'The discovery search budget is used up for now; showing catalog results only.',
+    };
+
+    function renderDiscovery(body, query) {
+      const catalog = asRecords(body.catalog_matches)
+        .filter((item) => typeof item.product_id === 'string' && item.product_id && !isLocalId(item.product_id));
+      const candidates = asRecords(body.discovered).map((candidate) => snapshotFromCandidate(candidate, body)).filter(Boolean);
+      const similar = sanitizeSimilar(asRecords(body.similar).map((item) => ({ ...item, price: item.price })))
+        .filter((item) => !catalog.some((match) => match.product_id === item.product_id));
+      // Notices: API-provided plain strings (capped) plus a status explanation; mock data is flagged.
+      const lines = [];
+      if (body.mock === true) lines.push('MOCK DISCOVERY DATA — synthetic fixtures for frontend development; listings and prices are not real.');
+      if (DISCOVERY_STATUS_TEXT[body.discovery_status]) lines.push(DISCOVERY_STATUS_TEXT[body.discovery_status]);
+      (Array.isArray(body.notices) ? body.notices : []).forEach((text) => {
+        const clean = cleanText(text, 300);
+        if (clean && !lines.includes(clean) && lines.length < 6) lines.push(clean);
+      });
+      if (lines.length) {
+        const notice = node('div', `mode-notice${body.mock === true ? ' demo-notice' : ''}`);
+        lines.forEach((text) => notice.append(node('p', 'notice-line', text)));
+        $('discover-notices').replaceChildren(notice);
+      }
+      state.products = catalog;
+      $('price-search-message').replaceChildren();
+      $('catalog-group-heading').hidden = false;
+      renderProducts(catalog, 'price-product-grid', (product) => {
+        const reason = cleanText(product.match_reason, 160);
+        return `Possible catalog match${reason ? ` · ${reason}` : ''}. Not confirmed as the exact item you searched for.`;
+      });
+      if (!catalog.length) $('price-search-message').append(node('p', 'empty-note', 'No catalog products matched this search.'));
+      $('discovered-group').hidden = false;
+      renderCandidates(candidates, body);
+      $('similar-group').hidden = !similar.length;
+      renderDiscoverSimilar(similar);
+      $('price-result-count').textContent = `${catalog.length} catalog · ${candidates.length} unverified · ${similar.length} similar`;
+      if (!catalog.length && !candidates.length && !similar.length) {
+        const empty = node('div', 'empty-state');
+        empty.append(node('div', 'symbol', '⌕'));
+        empty.append(node('h3', '', `Nothing found for “${query}”`));
+        empty.append(node('p', '', userProductUrl(query) ? 'You can still save the link above to My Collection.' : 'Try different words, paste a retailer product link, or add the product manually below.'));
+        $('price-search-message').replaceChildren(empty);
+      }
+      updatePricePrompt(catalog.length + candidates.length + similar.length > 0);
+    }
+
+    function renderCandidates(candidates, body) {
+      const grid = $('discovered-grid');
+      grid.replaceChildren();
+      if (!candidates.length) {
+        const reason = DISCOVERY_STATUS_TEXT[body.discovery_status] && body.discovery_status !== 'cached'
+          ? 'No web discovery results for this search.'
+          : 'No unverified listings were found for this search.';
+        $('discovered-message').replaceChildren(node('p', 'empty-note', reason));
+        return;
+      }
+      for (const item of candidates) {
+        const card = node('article', 'product-card');
+        card.dataset.candidateId = item.product_id;
+        const open = node('button', 'product-open');
+        open.type = 'button';
+        open.setAttribute('aria-label', `View ${item.title}`);
+        open.addEventListener('click', () => openLocalItem(state.localItems[item.product_id] || item));
+        const imageArea = node('div', 'product-image');
+        imageArea.append(node('span', '', '✳'));
+        imageArea.append(node('span', 'category-chip', 'Unverified'));
+        const copy = node('div', 'product-copy');
+        copy.append(node('span', 'product-brand', item.retailer || 'Retailer not provided'));
+        copy.append(node('h3', '', item.title));
+        const badges = node('div', 'product-badges');
+        badges.append(node('span', 'tag tag-unverified', 'Unverified listing'));
+        if (item.mock) badges.append(node('span', 'tag tag-demo', 'Mock fixture'));
+        copy.append(badges);
+        copy.append(node('span', 'candidate-price', item.price === null ? 'Price not available' : `Listed ${formatPrice(item.price)}`));
+        copy.append(node('span', 'product-note', `${item.observed_at ? `Observed ${formatDate(item.observed_at)}` : 'Observation time not provided'} · ${item.provenance}`));
+        open.append(imageArea, copy);
+        const footer = node('div', 'candidate-footer');
+        appendLocalLink(footer, item);
+        const save = node('button', 'save-button');
+        save.type = 'button';
+        updateSaveButton(save, item);
+        save.addEventListener('click', () => toggleSaved(item));
+        card.append(open, footer, save);
+        grid.append(card);
+      }
+    }
+
+    function renderDiscoverSimilar(items) {
+      const list = $('discover-similar-list');
+      list.replaceChildren();
+      for (const item of items) {
+        const row = node('button', 'similar-open');
+        row.type = 'button';
+        const info = node('span');
+        info.append(node('b', '', item.title));
+        info.append(node('span', '', item.brand || 'Brand not provided'));
+        info.append(node('small', '', item.reason || 'Similar catalog product; not the exact item you searched for.'));
+        row.append(info, node('b', '', formatPrice(item.price, 'USD', 'No current price')));
+        row.addEventListener('click', () => chooseProduct({ product_id: item.product_id, title: item.title, brand: item.brand }));
+        list.append(row);
       }
     }
 
@@ -1855,11 +2517,13 @@
 
     function resetDemoData() {
       state.savedIds = [];
+      state.localItems = Object.create(null);
       state.savedPrices = Object.create(null);
       state.savedErrors = Object.create(null);
       state.budget = state.profile?.budget ?? DEFAULT_BUDGET;
       try {
         localStorage.setItem('findora-saved-products', '[]');
+        localStorage.setItem(LOCAL_STORE_KEY, '{}');
         localStorage.setItem('findora-budget', String(state.budget));
         $('reset-message').className = 'form-message success';
         $('reset-message').textContent = `Saved items cleared and budget reset to ${formatPrice(state.budget)}.`;
@@ -1875,7 +2539,7 @@
     function deleteLocalProfile() {
       if (!window.confirm('Delete this local demo profile and clear its saved items and budget?')) return;
       try {
-        ['findora-profile', 'findora-saved-products', 'findora-budget'].forEach((key) => localStorage.removeItem(key));
+        ['findora-profile', 'findora-saved-products', 'findora-budget', LOCAL_STORE_KEY].forEach((key) => localStorage.removeItem(key));
       } catch {
         $('profile-message').className = 'form-message';
         $('profile-message').textContent = 'Could not delete the local profile from browser storage.';
@@ -1883,6 +2547,7 @@
       }
       state.profile = null;
       state.savedIds = [];
+      state.localItems = Object.create(null);
       state.savedPrices = Object.create(null);
       state.savedErrors = Object.create(null);
       state.productCache = Object.create(null);
