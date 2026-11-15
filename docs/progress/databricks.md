@@ -218,3 +218,17 @@
   now in the cloud review queue, unapproved. History remains 1 of >= 3 observations.
 - Repo copies of `config/approvals.json` and the new code/tests/docs changes in this
   Git checkout are uncommitted; commit/push needed to reach the user's local clone.
+
+## Retailer-specific probe (isolated codex/retailer-discovery branch)
+- Based on remote discovery branch a410a83; original checkout and uncommitted
+  Google-ranking edits preserved. Reused ranking module/focus rules in isolated branch.
+- Implemented two-request Amazon/Walmart probe; report and raw responses stay in
+  ignored data/retailer_probe, outside ingestion inputs. No approval or table changes.
+- Live run with privately configured key: 60 Amazon + 14 Walmart organic results.
+  Batch 7be16afec5cd4f99b0304c0de5341d43; exactly two requests, no retries/detail calls.
+- Search returns brand/model/variant leads, but no new verified Black/M/single offer.
+  Alternate variant links must not inherit a parent search price. Marketplace seller
+  identity remains separate (e.g. Walmart marketplace vs JustBlanks).
+- Fallback retained: existing reviewed data. No new prices approved, no Databricks
+  quota consumed, no claim of automatic verification or historical forecasting.
+- Local suite: 50 tests passed. CLI dry run confirmed two-request ceiling.
