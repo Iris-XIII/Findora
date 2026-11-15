@@ -225,3 +225,15 @@
   and preserved conflict evidence instead of assuming one Gildan observation forever.
 - Upload the new response alongside the complete cloud archive before ingestion.
   Main remains the existing baseline; no warehouse request or new API spend here.
+
+## Missing deployed Amazon offer diagnosed
+- Read actual findora_hackathon.gold.product_offers via Statement Execution API:
+  Gildan query succeeded with no rows. Main cc9e339 still disables the old manual
+  Amazon approval and lacks the new detail adapter/approval; branch not yet merged.
+- Merged latest main deployment/connection fixes into codex/amazon-integration.
+  Validation: 72 pipeline tests and 40 backend tests pass.
+- Attempted source upload to findora_hackathon.bronze.serpapi_raw/responses failed:
+  signed-in yqin47@wisc.edu lacks USE SCHEMA on findora_hackathon.bronze.
+  No file/table mutations performed. Main deliberately not advanced before the
+  approval's required source is present. Owner must upload the new envelope and
+  run the ingestion notebook on this branch, then verify Gildan Gold rows.
