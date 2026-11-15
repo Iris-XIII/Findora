@@ -65,3 +65,34 @@
 - Live SQL verified Columbia 2088121 Black/M Regular in Gold current_offers: $220,
   Columbia Sportswear, exact snapshot at 2026-11-15T03:09Z. Columbia 1533891 has no offer.
 - Cloud data unchanged; deploying branch UI/backend changes remains an integration step.
+
+## On-demand product discovery — isolated proposed backend change (2026-11-15)
+- Added server-side `/discover?q=` for arbitrary clothing keywords or pasted product URLs.
+  URL input is parsed for search terms; arbitrary pages are never fetched.
+- SerpApi candidates are always unverified, separate from existing Gold/approved offers.
+  Curated catalog matches and same-category suggestions are returned even when SerpApi
+  credentials are not configured; no synthetic retail prices added.
+- Existing `frontend/index.html` already supports the `/discover` response and API-mode
+  UI. No frontend source files or shared API contracts changed in this patch.
+- Uses only server-side `SERPAPI_API_KEY`; 20-request/hour process-local cap and
+  10-minute caching reduce accidental repeated charges. No live API calls made in tests.
+- Tests use fake provider data. Live SerpApi access, Databricks permissions, and
+  deployed end-to-end behavior remain unverified.
+- Integration note: backend owner should review new endpoint, key deployment and
+  budget policy before merging; shared contracts can be updated by agreement.
+
+## Discovery patch inspected and integrated — 2026-11-15
+- Updated codex/amazon-integration with main cfc68ea before applying the supplied patch.
+- Patch applies cleanly. ZIP is not equivalent to the patch: it additionally changes
+  collectors/normalization and would re-enable the held Amazon approval. Those changes
+  were not imported. Current main's hold and all frontend files are preserved.
+- Verified frontend renderDiscovery/snapshotFromCandidate accepts endpoint fields;
+  deployment packaging copies backend/app/*.py, including the new discovery module.
+- Fixed malformed URL/provider result handling, expired-cache pruning/256-entry cap,
+  serialized concurrent requests, cached/budget-exhausted statuses, currency/hostname
+  boundaries, and preservation of the Columbia spelling alias.
+- VERIFIED: 56 backend tests plus 16 deployment diagnostics tests passed (72 total),
+  using synthetic providers only; no paid requests or cloud writes.
+- Existing frontend untouched; Node/npm unavailable here, so no new browser/build run.
+- Runtime needs SERPAPI_API_KEY in the app environment. User reports key configured;
+  no secret contents inspected or logged. Live provider/app deployment not verified.

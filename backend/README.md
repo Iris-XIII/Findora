@@ -74,6 +74,47 @@ curl -fsS http://localhost:8000/products/gildan-18000-unisex-black-m-single/hist
 curl -fsS http://localhost:8000/products/gildan-18000-unisex-black-m-single/advice
 ```
 
+## On-demand clothing discovery (optional)
+
+The existing full-size frontend `frontend/index.html` already calls `GET /discover?q=...`
+for nonempty searches in **API mode**. The backend now implements this route
+without changing `/products/search` or any reviewed-offer API shapes.
+
+- `q=Gildan 18000 black sweatshirt` searches SerpApi Google Shopping for candidate listings.
+- `q=https://www.printmood.com/products/...` extracts product-name/model and selected
+  color/size words **from the URL text** and searches those terms. It does not scrape
+  or visit user-supplied URLs. URLs without meaningful product terms show a notice.
+- Matching canonical products already present in Gold are returned as `catalog_matches`
+  and nearby catalog alternatives as `similar` (prices are null until reviewed).
+- New provider records are returned only as `discovered` with
+  `verification=unverified`. They **do not enter Gold**, qualify as exact offers,
+  or generate buying advice. User can inspect/save them in the existing frontend.
+- The SerpApi request is **server-side only**. Set `SERPAPI_API_KEY` privately in the
+  deployed backend environment to enable real discovery. No key means the route
+  still returns catalog matches with `discovery_status=unavailable`.
+- Search is bounded to one provider request per uncached query, 15 candidates,
+  a 10-minute process-local cache (at most 256 entries), and a 20-request-per-hour process-local budget.
+  Concurrent searches are serialized to avoid duplicate billing for the same query.
+  These controls are not a distributed quota; protect the endpoint if deploying publicly.
+- Confirm selected color, size, quantity, availability, and total price with the
+  merchant before approving/importing listings using B's review workflow.
+
+Local smoke checks (no API key needed to check route/fallback):
+
+```bash
+curl -sS 'http://localhost:8000/discover?q=Gildan%2018000%20black%20sweatshirt'
+curl -sSG --data-urlencode 'q=https://www.printmood.com/products/sweatshirts/gildan-18000?color=black&size=m' \
+  'http://localhost:8000/discover'
+```
+
+Catalog matching currently examines the first 50 catalog products returned by the existing
+Gold adapter; this is sufficient for the four-product prototype, not a full catalog search index.
+ASIN-only URLs are searched by identifier; they do not guarantee product-name resolution.
+The VM collector `.env` is not automatically loaded by the deployed app: the runtime
+process must receive `SERPAPI_API_KEY` through its private environment configuration.
+
+API-mode frontend: `?mode=api`. Leave its existing demo-mode fallback untouched.
+
 ## Pricing and advice rules
 
 Gold catalog `unobserved` maps to API `insufficient`. A Gold-connected health result

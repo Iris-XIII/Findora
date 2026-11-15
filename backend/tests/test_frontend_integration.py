@@ -6,6 +6,7 @@ from app.main import create_app
 @pytest.fixture
 def client(monkeypatch):
     monkeypatch.delenv('FINDORA_CORS_ORIGINS',raising=False)
+    monkeypatch.delenv('SERPAPI_API_KEY',raising=False)
     return TestClient(create_app(mode='demo'))
 
 @pytest.mark.parametrize('origin',['http://localhost:5173','http://127.0.0.1:5173'])
@@ -23,8 +24,11 @@ def test_custom_deployed_origin(monkeypatch):
     c=TestClient(create_app(mode='demo'))
     assert c.get('/health',headers={'Origin':'https://frontend.example'}).headers['access-control-allow-origin']=='https://frontend.example'
 
-def test_discovery_falls_back_to_catalog(client):
-    assert client.get('/discover?q=headphones').status_code==404
+def test_discovery_unconfigured_keeps_catalog_working(client):
+    discovered = client.get('/discover?q=headphones')
+    assert discovered.status_code == 200
+    assert discovered.json()['discovery_status'] == 'unavailable'
+    assert discovered.json()['discovered'] == []
     items=client.get('/products/search?q=headphones').json()['items']
     assert items
     pid=items[0]['product_id']

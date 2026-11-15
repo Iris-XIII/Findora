@@ -6,14 +6,16 @@ from fastapi.responses import JSONResponse
 from .sample_data import PRODUCTS, OFFERS, HISTORY, SIMILAR
 from .gold import Gold, DataUnavailable
 from .service import eligible, advise
+from .discovery import Discovery, catalog_matches
 
 
-def create_app(store=None, mode=None):
+def create_app(store=None, mode=None, discovery=None):
     mode = mode or os.getenv('FINDORA_DATA_MODE', 'demo')
     if mode not in ('demo', 'databricks'):
         raise ValueError('FINDORA_DATA_MODE must be demo or databricks')
     store = store or (Gold() if mode == 'databricks' else None)
-    app = FastAPI(title='Findora API', version='0.2.0')
+    app = FastAPI(title='Findora API', version='0.3.0')
+    discovery = discovery if discovery is not None else Discovery()
     origins = [s.strip() for s in os.getenv('FINDORA_CORS_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',') if s.strip()]
     app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=False, allow_methods=['GET'], allow_headers=['*'])
 
@@ -26,6 +28,19 @@ def create_app(store=None, mode=None):
         if store:
             store.health()
         return {'status': 'ok', 'data_mode': 'observed' if store else 'demo'}
+
+    @app.get('/discover')
+    def discover(q: str = Query(..., min_length=2, max_length=500)):
+        # External results never enter reviewed Gold offers or buying advice.
+        result = discovery.search(q)
+        try:
+            catalog = store.products() if store else list(PRODUCTS.values())
+            matches, similar = catalog_matches(' '.join(result['interpreted']['terms']), catalog)
+            result = {**result, 'catalog_matches': matches, 'similar': similar}
+        except DataUnavailable:
+            result = {**result, 'notices': result['notices'] +
+                      ['Reviewed catalog temporarily unavailable; shopping candidates are unverified.']}
+        return result
 
     @app.get('/products/search')
     def search(q: str = Query('', max_length=200)):
