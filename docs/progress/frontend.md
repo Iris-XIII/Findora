@@ -14,6 +14,7 @@
 
 ## In progress
 - Frontend remains in explicit synthetic Clothing demo mode by default; live API behavior has only been checked with contract-shaped mocks.
+- Chrome extension files are split into a Manifest V3 unpacked-extension folder; loading and runtime behavior have not yet been verified in Chrome.
 
 ## Next steps
 - Verify search and product detail against the integrated FastAPI backend when clothing records are available.
@@ -29,6 +30,8 @@
 - Browser: verified Add to Collection appears in the product detail header, adds/removes the product, and synchronizes the catalog save control and collection count.
 - Browser: verified an old “Demo Shopper” profile opens onboarding, submitting a user profile opens Homepage, completed profiles return on reload, and a cleared profile starts at onboarding with the app and search hidden.
 - Browser: verified the welcome panel contains the search box below the greeting, the removed subtitle is absent, the layout fits mobile without horizontal overflow, the search stays hidden on My Collection, and demo search still routes to results.
+- `extension/manifest.json`, `extension/popup.html`, `extension/popup.css`, and `extension/popup.js`: replaced the concatenated `extension/extension.html` with a standard unpacked extension package; mock output is labeled synthetic.
+- Extension validation: Python manifest/asset-reference/whitespace checks passed; `git diff --check` passed. `node --check extension/popup.js` could not run because Node.js is unavailable, and Chrome installation has not been tested in this environment.
 - `git diff --check`: passed.
 
 ## Handoff notes
