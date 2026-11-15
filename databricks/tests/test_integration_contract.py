@@ -6,6 +6,7 @@ the shared catalog, and the demo hard rule. They read repository files only;
 no cloud resources are touched.
 """
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -170,6 +171,34 @@ class IdempotencyTests(unittest.TestCase):
         pipeline = read("findora_data", "pipeline.py")
         self.assertIn("ON t.offer_id = s.offer_id", pipeline)
         self.assertIn("'$.candidate_id') = get_json_object", pipeline)
+
+
+class SeedSourceColumnTests(unittest.TestCase):
+    """VALUES-based sources must expose real column names.
+
+    Delta MERGE cannot resolve s.<column> against unnamed col1..colN sources
+    (live DELTA_MERGE_UNRESOLVED_EXPRESSION during Phase 1, 2026-11-15)."""
+
+    BRONZE_COLUMNS = ["source", "source_product_id", "raw_title", "brand", "model",
+                      "variant", "price", "currency", "product_url", "observed_at",
+                      "ingestion_batch", "provenance"]
+
+    def test_seed_values_view_has_explicit_column_aliases(self):
+        bronze = read("sql", "01_bronze.sql").lower()
+        m = re.search(r"as\s+seed\s*\(([^)]*)\)", bronze)
+        self.assertIsNotNone(m, "VALUES source is missing the AS seed(...) alias list")
+        cols = [c.strip() for c in m.group(1).split(",")]
+        self.assertEqual(cols, self.BRONZE_COLUMNS)
+
+    def test_merge_references_resolve_against_alias_list(self):
+        bronze = read("sql", "01_bronze.sql").lower()
+        for col in ("source", "source_product_id", "observed_at"):
+            self.assertIn(f"s.{col}", bronze)
+
+    def test_no_unaliased_values_sources_elsewhere(self):
+        for name in ("02_silver.sql", "03_gold.sql"):
+            sql = read("sql", name).lower()
+            self.assertNotIn("from values", sql, name)
 
 
 if __name__ == "__main__":
