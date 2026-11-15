@@ -1,6 +1,6 @@
 # Findora backend handoff
 
-Branch: `codex/backend-databricks`, based on main `6599466`.
+Branch: `codex/backend-databricks`, integrated with main `c01c991`.
 The app is read-only. No ingestion, approvals, or Gold migrations run here.
 
 ## Start
@@ -19,7 +19,7 @@ FINDORA_DATA_MODE=databricks
 FINDORA_CATALOG=findora_hackathon
 DATABRICKS_HOST=https://dbc-84be3fa6-3f68.cloud.databricks.com
 DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/<warehouse-id>
-FINDORA_CORS_ORIGINS=http://localhost:5173,https://<your-frontend-host>
+FINDORA_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,https://<your-frontend-host>
 ```
 
 Use Databricks SDK unified authentication: a privately supplied DATABRICKS_TOKEN
@@ -109,3 +109,22 @@ and verified live endpoint responses are still required for final frontend hando
 Complete route examples generated with synthetic test inputs are in
 `examples/synthetic_responses.json`. They illustrate JSON shapes only, not live pricing.
 Local validation: 31 tests pass. Live warehouse verification: pending connection setup.
+
+## Integration with main c01c991
+
+Main's frontend and Discover UI have been merged into this backend branch without
+conflicts or frontend edits. `/discover` remains unimplemented (its contract is still
+proposed); main's UI handles HTTP 404 by falling back to `/products/search`. Do not
+point production at the frontend's mock discovery proxy.
+
+Frontend teammate setup: use `VITE_API_URL` for the backend host and `?mode=api`
+(or `VITE_DEFAULT_MODE=api`). The backend allows localhost:5173 and 127.0.0.1:5173
+by default. Set FINDORA_CORS_ORIGINS to include the actual deployed frontend origin.
+No deployed backend URL is available yet. API-mode demo data is headphones; Gold
+clothing data requires FINDORA_DATA_MODE=databricks and working warehouse compute.
+
+Post-merge validation: 37 local backend tests pass, including all consumed routes,
+404 discovery fallback, empty catalog query, 404/422 errors, and CORS origins.
+No browser build/run was repeated here because Node/npm are unavailable on this VM.
+Warehouse status was read without starting compute: STOPPED. The earlier Free Edition
+quota block is unresolved; live Gold validation remains pending.

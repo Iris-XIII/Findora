@@ -34,3 +34,25 @@
 - Frontend can develop against existing demo mode or the documented fixture shapes,
   but only claim Gold integration after live smoke tests succeed.
 - Original worktree and its unfinished SerpAPI edits remain untouched.
+
+## Main integration — 2026-11-15 (supersedes earlier setup status)
+- Fetched origin/main c01c991 (frontend API integration and Discover UI) and merged
+  into codex/backend-databricks cleanly. Backend code retained, no conflicts, no
+  frontend edits. Original SerpAPI checkout/worktree left untouched.
+- Main's frontend expects our existing route/evidence shapes and falls back from
+  absent /discover (404) to /products/search. The proposed /discover contract is
+  not implemented or silently approved by this integration.
+- Default local CORS now supports localhost:5173 and 127.0.0.1:5173. Deployed
+  frontend origin must be configured explicitly through FINDORA_CORS_ORIGINS.
+- VERIFIED: PYTHONPATH=/tmp/findora_backend_deps:backend python3 -m pytest backend/tests -q:
+  37 passed; one third-party TestClient deprecation warning. git diff --check passed.
+  Tests include local/custom CORS, foreign-origin denial, discovery 404 fallback,
+  all frontend-consumed routes, empty catalog query, 404/422 errors, plus pricing guards.
+- Node/npm unavailable; frontend browser/build tests not rerun. These are backend
+  integration tests, not a claim of end-to-end browser or live warehouse verification.
+- CLI installed at ~/.local/bin/databricks and findora profile authenticated in prior
+  session. HTTP Path known: /sql/1.0/warehouses/00869224988d7681. Auth setup is no longer
+  the blocker. Earlier daily Free Edition quota prevented warehouse startup. Current
+  read-only status check: STOPPED; no start request made during this integration.
+- Remaining: live Gold smoke check and deployed backend URL, then frontend live test.
+  No change to 24-hour freshness policy, approved observations, or cloud tables.

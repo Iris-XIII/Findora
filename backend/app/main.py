@@ -14,7 +14,7 @@ def create_app(store=None, mode=None):
         raise ValueError('FINDORA_DATA_MODE must be demo or databricks')
     store = store or (Gold() if mode == 'databricks' else None)
     app = FastAPI(title='Findora API', version='0.2.0')
-    origins = [s.strip() for s in os.getenv('FINDORA_CORS_ORIGINS', 'http://localhost:5173').split(',') if s.strip()]
+    origins = [s.strip() for s in os.getenv('FINDORA_CORS_ORIGINS', 'http://localhost:5173,http://127.0.0.1:5173').split(',') if s.strip()]
     app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=False, allow_methods=['GET'], allow_headers=['*'])
 
     @app.exception_handler(DataUnavailable)
