@@ -32,3 +32,19 @@ Do not assume a parent/child ASIN relationship. Price excludes unverified shippi
 Cloud verification is pending. Local validation on unified main: 72 tests pass;
 offline conversion produces one review candidate and zero approved offers. The raw
 observation and old historical prices are not rewritten when a refresh occurs.
+
+## New observation reviewed on this branch
+
+The new candidate is now approved via agent inspection of the provider's explicit
+selected options and single-offer evidence, with both metadata conflicts acknowledged
+and rationale retained in evidence_notes. This supersedes the pending-review statement
+above for this candidate only. The earlier manual Amazon candidate remains disabled;
+Columbia's existing approval is preserved. One local normalized offer at USD 10.96;
+replaying the same response twice produces one offer, not two.
+
+Before running ingestion with this branch's approvals, upload
+`amazon_0d3fc8c37295c7f46cc376e127df89f0.json` from local `data/amazon_refresh/` to
+`/Volumes/findora_hackathon/bronze/serpapi_raw/responses` (or the actual configured
+catalog's responses folder). Retain the full existing archive, including Columbia.
+An approval without its raw response will correctly fail ingestion. No warehouse
+start or cloud write was performed. Main remains unchanged until explicitly merged.

@@ -36,5 +36,28 @@
     "available": true,
     "reviewed_at": "2026-11-15T03:21:06.899054+00:00",
     "review_method": "manual exact-variant page verification by user; screenshot retained in bronze volume evidence directory"
+  },
+  {
+    "candidate_id": "0d3fc8c37295c7f46cc376e127df89f0",
+    "product_id": "gildan-18000-unisex-black-m-single",
+    "confirmed": true,
+    "confirmed_attributes": {
+      "brand": "Gildan",
+      "model": "18000",
+      "color": "Black",
+      "size": "M",
+      "condition": "new",
+      "currency": "USD"
+    },
+    "evidence_url": "https://www.amazon.com/dp/B01M0PENYV/",
+    "evidence_notes": "Reviewed the saved SerpAPI amazon_product response for requested ASIN B01M0PENYV, source time 2026-11-15T13:42:31Z. Explicit selected=true options all associate Black, Medium and Number of Items 1 with B01M0PENYV. Product details brand Gildan and model G18000 match canonical Gildan 18000 (model alias). Product and single purchase offer both report USD 10.96, In Stock; shipper/seller Amazon.com. Standard new retail purchase offer, consistent with prior user variant/condition review; no used-condition offer is being selected. Listed item price only; shipping and taxes not established. Review accepts explicit selected Size Medium and one-item selection over generic details.special_size=large and Multipack family title. details.asin=B0D14PTTPL differs from selected product ASIN; retain both identifiers without asserting a parent-child relationship. This is a new timestamped SerpAPI observation, not a correction or reapproval of the older manual snapshot. Review method is agent inspection of structured provider evidence, not a fresh user page attestation.",
+    "price_verified": true,
+    "available": true,
+    "reviewed_at": "2026-11-15T15:08:15.246083+00:00",
+    "review_method": "agent review of selected-variant SerpAPI product and purchase evidence; generic metadata conflicts explicitly acknowledged",
+    "acknowledged_source_conflicts": [
+      "details_asin_differs",
+      "details_size_differs"
+    ]
   }
 ]

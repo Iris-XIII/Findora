@@ -120,10 +120,17 @@ class ProductConfigTests(unittest.TestCase):
     def test_gildan_asin_discrepancy_is_documented(self):
         approvals = json.loads(read("config", "approvals.json"))
         gildan = [a for a in approvals if a["product_id"] == "gildan-18000-unisex-black-m-single"]
-        self.assertEqual(len(gildan), 1)
-        self.assertIn("B01M0PENYV", gildan[0]["evidence_notes"])
-        self.assertIn("B0D14PTTPL", gildan[0]["evidence_notes"])
-        self.assertIn("ASIN unresolved", gildan[0]["review_method"])
+        self.assertGreaterEqual(len(gildan), 2)
+        for observation in gildan:
+            self.assertIn("B01M0PENYV", observation["evidence_notes"])
+            self.assertIn("B0D14PTTPL", observation["evidence_notes"])
+        old = next(a for a in gildan if a["candidate_id"] == "df2e9a19369b51861c6fbe5a5412cf32")
+        self.assertFalse(old["confirmed"])
+        self.assertIn("ASIN unresolved", old["review_method"])
+        new = next(a for a in gildan if a["candidate_id"] == "0d3fc8c37295c7f46cc376e127df89f0")
+        self.assertTrue(new["confirmed"])
+        self.assertEqual(set(new["acknowledged_source_conflicts"]),
+                         {"details_asin_differs", "details_size_differs"})
 
     def test_approvals_reference_manifest_products_only(self):
         products = {p["product_id"] for p in json.loads(read("config", "products.json"))}

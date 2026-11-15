@@ -211,3 +211,17 @@
   source timestamp 2026-11-15T13:42:31Z. Generic ASIN/size conflicts retained.
 - Ready for code integration; review decision and live ingestion remain pending.
   See databricks/AMAZON_REFRESH.md. No new SerpAPI quota used in this step.
+
+## Amazon selected-variant review completed locally
+- Integrated latest main aece95a into this isolated branch (backend included).
+- New candidate 0d3fc8c37295c7f46cc376e127df89f0 reviewed against the saved provider
+  response: selected Black/Medium/1 with matching selected ASIN; G18000; single-offer
+  Amazon.com stock/price USD 10.96. Accepted explicit selections over generic details
+  conflicts, recording rationale and acknowledgement. No parent/child ASIN claim.
+- Existing manual Amazon candidate remains disabled; Columbia approval unchanged.
+- Local real-response normalization produces one reviewed offer; duplicate replay
+  preserves one offer. This is not a live cloud ingestion or full-archive validation.
+- Registry regression test now verifies separate old-disabled/new-reviewed records
+  and preserved conflict evidence instead of assuming one Gildan observation forever.
+- Upload the new response alongside the complete cloud archive before ingestion.
+  Main remains the existing baseline; no warehouse request or new API spend here.
