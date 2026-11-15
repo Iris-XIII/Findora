@@ -23,8 +23,7 @@ class Gold:
             cfg = Config()
             path = os.environ['DATABRICKS_HTTP_PATH']
             with sql.connect(server_hostname=urlsplit(cfg.host).hostname, http_path=path,
-                             credentials_provider=lambda: cfg.authenticate,
-                             session_configuration={'spark.sql.session.timeZone': 'UTC'}) as conn:
+                             credentials_provider=lambda: cfg.authenticate) as conn:
                 with conn.cursor() as cursor:
                     cursor.execute(statement, parameters=parameters or {})
                     names = [c[0] for c in cursor.description]
