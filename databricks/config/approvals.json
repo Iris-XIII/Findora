@@ -40,7 +40,7 @@
   {
     "candidate_id": "0d3fc8c37295c7f46cc376e127df89f0",
     "product_id": "gildan-18000-unisex-black-m-single",
-    "confirmed": true,
+    "confirmed": false,
     "confirmed_attributes": {
       "brand": "Gildan",
       "model": "18000",
@@ -54,7 +54,7 @@
     "price_verified": true,
     "available": true,
     "reviewed_at": "2026-11-15T15:08:15.246083+00:00",
-    "review_method": "agent review of selected-variant SerpAPI product and purchase evidence; generic metadata conflicts explicitly acknowledged",
+    "review_method": "agent review of selected-variant SerpAPI product and purchase evidence; generic metadata conflicts explicitly acknowledged. Held unconfirmed pending independent exact-variant product-page verification (ASIN and size conflicts unresolved); agent review alone does not establish an exact match.",
     "acknowledged_source_conflicts": [
       "details_asin_differs",
       "details_size_differs"
