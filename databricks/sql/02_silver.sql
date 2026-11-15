@@ -1,5 +1,7 @@
 -- Findora Silver layer: canonical products + normalized offers.
--- Run after 01_bronze.sql. Fully recomputed from Bronze (idempotent).
+-- Run after 01_bronze.sql. Unified contract (2026-11-15): insert/update-only
+-- MERGEs scoped to seed-demo provenance; real rows (SerpAPI/manual, written by
+-- findora_data.pipeline) are never touched here. No deletes, no rebuilds.
 --
 -- product_id convention (stable across layers, matches API IDs):
 --   lower(brand) || '-' || lower(model with non-alphanumerics as '-')
@@ -13,10 +15,12 @@ SET TIME ZONE 'UTC';
 CREATE SCHEMA IF NOT EXISTS findora_hackathon.silver;
 
 -- Canonical variant per product = most frequent raw variant (ties -> alphabetical).
-CREATE OR REPLACE TABLE findora_hackathon.silver.canonical_products AS
+-- SEED PATH ONLY: derived from seed-demo rows of bronze.raw_offers.
+CREATE OR REPLACE TEMP VIEW _findora_seed_products AS
 WITH variant_counts AS (
   SELECT brand, model, variant, COUNT(*) AS cnt
   FROM findora_hackathon.bronze.raw_offers
+  WHERE provenance LIKE 'seed-demo%'
   GROUP BY brand, model, variant
 ),
 canonical_variant AS (
@@ -45,14 +49,25 @@ SELECT
   TO_JSON(NAMED_STRUCT('variant', cv.variant, 'brand', b.brand, 'model', b.model)) AS attributes_json
 FROM findora_hackathon.bronze.raw_offers b
 JOIN canonical_variant cv ON b.brand = cv.brand AND b.model = cv.model
+WHERE b.provenance LIKE 'seed-demo%'
 GROUP BY b.brand, b.model, cv.variant;
 
-COMMENT ON TABLE findora_hackathon.silver.canonical_products IS
-  'Canonical products derived from bronze.raw_offers. Current contents are seed-demo data for MadHack 2026.';
+-- Insert/update-only MERGE (unified contract): real canonical products from
+-- findora_data.pipeline are untouched; no deletes ever.
+MERGE INTO findora_hackathon.silver.canonical_products t
+USING _findora_seed_products s
+ON t.product_id = s.product_id
+WHEN MATCHED THEN UPDATE SET *
+WHEN NOT MATCHED THEN INSERT *;
 
--- Normalized offers: retailer comes from bronze `source`; deduplicate by
--- product/retailer/variant/timestamp keeping the newest ingestion batch.
-CREATE OR REPLACE TABLE findora_hackathon.silver.normalized_offers AS
+DROP VIEW IF EXISTS _findora_seed_products;
+
+COMMENT ON TABLE findora_hackathon.silver.canonical_products IS
+  'Canonical products from bronze seed rows (seed path) and config/products.json (real path via findora_data.pipeline). Seed rows are MadHack 2026 demo data.';
+
+-- Normalized offers (SEED PATH ONLY): retailer comes from bronze `source`;
+-- deduplicate by product/retailer/variant/timestamp keeping the newest batch.
+CREATE OR REPLACE TEMP VIEW _findora_seed_offers AS
 WITH canonical_variant AS (
   SELECT brand, model, variant
   FROM (
@@ -60,6 +75,7 @@ WITH canonical_variant AS (
            ROW_NUMBER() OVER (PARTITION BY brand, model ORDER BY cnt DESC, variant) AS rn
     FROM (SELECT brand, model, variant, COUNT(*) AS cnt
           FROM findora_hackathon.bronze.raw_offers
+          WHERE provenance LIKE 'seed-demo%'
           GROUP BY brand, model, variant)
   )
   WHERE rn = 1
@@ -78,6 +94,7 @@ joined AS (
     CASE WHEN b.variant = cv.variant THEN 'exact' ELSE 'unverified' END AS match_type
   FROM findora_hackathon.bronze.raw_offers b
   JOIN canonical_variant cv ON b.brand = cv.brand AND b.model = cv.model
+  WHERE b.provenance LIKE 'seed-demo%'
 ),
 deduped AS (
   SELECT *,
@@ -101,5 +118,15 @@ SELECT
 FROM deduped
 WHERE rn = 1;
 
+-- Insert/update-only MERGE (unified contract): real offers written by
+-- findora_data.pipeline keep their own offer_ids and are untouched; no deletes.
+MERGE INTO findora_hackathon.silver.normalized_offers t
+USING _findora_seed_offers s
+ON t.offer_id = s.offer_id
+WHEN MATCHED THEN UPDATE SET *
+WHEN NOT MATCHED THEN INSERT *;
+
+DROP VIEW IF EXISTS _findora_seed_offers;
+
 COMMENT ON TABLE findora_hackathon.silver.normalized_offers IS
-  'Normalized offers derived from bronze.raw_offers. Current contents are seed-demo data for MadHack 2026.';
+  'Normalized offers from bronze seed rows (seed path) and reviewed candidates (real path via findora_data.pipeline). Seed rows are MadHack 2026 demo data.';

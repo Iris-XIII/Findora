@@ -29,10 +29,11 @@ CREATE TABLE IF NOT EXISTS findora_hackathon.bronze.raw_offers (
 COMMENT ON TABLE findora_hackathon.bronze.raw_offers IS
   'Raw offers. Current contents are seed-demo data for MadHack 2026 (labeled in provenance column); not observed retailer data.';
 
--- Idempotent rerun: clear and reload the labeled seed batch.
-TRUNCATE TABLE findora_hackathon.bronze.raw_offers;
-
-INSERT INTO findora_hackathon.bronze.raw_offers VALUES
+-- Idempotent rerun (unified contract, 2026-11-15): INSERT-ONLY upsert on the
+-- stable seed key (source, source_product_id, observed_at). This script never
+-- truncates, deletes, or rebuilds; real rows ingested via
+-- findora_data.pipeline (SerpAPI / manual provenance) are never touched.
+CREATE OR REPLACE TEMP VIEW _findora_seed_raw AS SELECT * FROM VALUES
   -- Product 1: NorthPeak Fleece Hoodie (FP-HOOD-100), canonical variant 'Charcoal / L'
   ('Demo Outfitters','DO-FPHOOD100-CHL','NorthPeak Fleece Hoodie','NorthPeak','FP-HOOD-100','Charcoal / L',59.99,'USD','https://example.com/demo-outfitters/fleece-hoodie',CAST('2026-11-01T12:00:00Z' AS TIMESTAMP),'seed-2026-11-14-001','seed-demo: generated for MadHack 2026 on 2026-11-14; not observed retailer data'),
   ('Demo Outfitters','DO-FPHOOD100-CHL','NorthPeak Fleece Hoodie','NorthPeak','FP-HOOD-100','Charcoal / L',54.99,'USD','https://example.com/demo-outfitters/fleece-hoodie',CAST('2026-11-07T12:00:00Z' AS TIMESTAMP),'seed-2026-11-14-001','seed-demo: generated for MadHack 2026 on 2026-11-14; not observed retailer data'),
@@ -69,3 +70,14 @@ INSERT INTO findora_hackathon.bronze.raw_offers VALUES
   ('Campus Apparel','CA-NPBN500-GR','NorthPeak Merino Beanie','NorthPeak','NP-BN-500','Gray / One Size',21.50,'USD','https://example.com/campus-apparel/merino-beanie',CAST('2026-11-14T12:00:00Z' AS TIMESTAMP),'seed-2026-11-14-001','seed-demo: generated for MadHack 2026 on 2026-11-14; not observed retailer data'),
   ('Basics Barn','BB-NPBN500-GR','NorthPeak Merino Beanie','NorthPeak','NP-BN-500','Gray / One Size',22.75,'USD','https://example.com/basics-barn/merino-beanie',CAST('2026-11-14T12:00:00Z' AS TIMESTAMP),'seed-2026-11-14-001','seed-demo: generated for MadHack 2026 on 2026-11-14; not observed retailer data'),
   ('Demo Outfitters','DO-NPBN500-GR','NorthPeak Merino Beanie','NorthPeak','NP-BN-500','Gray / One Size',23.00,'USD','https://example.com/demo-outfitters/merino-beanie',CAST('2026-11-14T12:00:00Z' AS TIMESTAMP),'seed-2026-11-14-001','seed-demo: generated for MadHack 2026 on 2026-11-14; not observed retailer data');
+
+-- Insert-only MERGE on the stable seed key. Matched rows are left untouched
+-- (seed observations are immutable history); only genuinely new rows insert.
+MERGE INTO findora_hackathon.bronze.raw_offers t
+USING _findora_seed_raw s
+ON t.source <=> s.source
+   AND t.source_product_id <=> s.source_product_id
+   AND t.observed_at <=> s.observed_at
+WHEN NOT MATCHED THEN INSERT *;
+
+DROP VIEW IF EXISTS _findora_seed_raw;

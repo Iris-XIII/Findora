@@ -1,7 +1,7 @@
--- B -> C handoff examples. Set catalog in connection or USE CATALOG first.
+-- B -> C handoff examples for the unified contract (2026-11-15).
 -- :product_id and :query are bound parameters, not string substitutions.
--- Confirm the proposed Gold semantics in README.md with C before integration.
-USE CATALOG workspace;
+-- Catalog: findora_hackathon (proposed shared catalog; confirm with C).
+USE CATALOG findora_hackathon;
 SET TIME ZONE 'UTC';
 
 -- GET /products/search?q=...
@@ -26,10 +26,25 @@ ORDER BY price, retailer;
 SELECT observed_at, price, currency, retailer, source_type
 FROM gold.product_offers WHERE product_id = :product_id ORDER BY observed_at;
 
--- Inputs to C's advice rule: do not interpret row count as temporal coverage.
-SELECT s.*, c.distinct_observation_dates, c.first_observed_at
-FROM gold.price_summary s JOIN gold.price_coverage c USING (product_id)
-WHERE s.product_id = :product_id;
+-- ADVICE ELIGIBILITY (unified contract): a fresh verified current price plus
+-- sufficient REAL history. HARD RULE: demo data is never advice-eligible,
+-- even when it satisfies the >=3 distinct UTC dates / >=48h span thresholds.
+SELECT pc.product_id, pc.data_status, cov.history_status,
+       cov.distinct_observation_dates, cov.span_hours,
+       cps.current_lowest_price, cps.current_last_observed_at,
+       s.median_observed_price, s.minimum_observed_price,
+       CASE WHEN pc.data_status <> 'demo'
+             AND cov.history_status = 'sufficient'
+             AND cps.current_lowest_price IS NOT NULL
+            THEN 'eligible' ELSE 'not_eligible' END AS advice_eligibility
+FROM gold.product_catalog pc
+LEFT JOIN gold.price_coverage cov USING (product_id)
+LEFT JOIN gold.current_price_summary cps USING (product_id)
+LEFT JOIN gold.price_summary s USING (product_id)
+WHERE pc.product_id = :product_id;
+-- BUY/WAIT logic (C): only when advice_eligibility = 'eligible'; compare
+-- cps.current_lowest_price against s.median_observed_price (e.g. BUY when
+-- current lowest >= 10% below median); otherwise return INSUFFICIENT_DATA.
 
 -- Inputs to C's alternatives ranking: exclude exact product, return real price or null.
 -- C chooses the compatible categories/features and supplies the similarity rationale.

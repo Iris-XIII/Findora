@@ -1,13 +1,16 @@
 # Databricks notebook source
+# DBTITLE 1,01_ingest intro
 # MAGIC %md
 # MAGIC # Findora: reviewed SerpAPI snapshots → Bronze → Silver → Gold
 # MAGIC Select **Serverless** notebook compute. For a Git clone, run the first code cell,
 # MAGIC upload saved JSON responses into the printed Volume path, then **Run All**.
 # MAGIC For the direct-upload ZIP, snapshots are included and you can **Run All** immediately.
 # MAGIC This notebook does not need an API key.
-# MAGIC Keep `catalog=workspace`. Leave `project_root` blank unless automatic discovery fails.
+# MAGIC Default catalog is `findora_hackathon` (the proposed shared catalog; confirm with the backend owner before switching). Leave `project_root` blank unless automatic discovery fails.
 
 # COMMAND ----------
+
+# DBTITLE 1,01_ingest setup
 from pathlib import Path
 import json
 import sys
@@ -46,7 +49,7 @@ def locate_project_root(explicit="", cwd=None, notebook_path=None):
 
 
 dbutils.widgets.text("project_root", "", "Optional path to databricks or Findora_B folder")
-dbutils.widgets.text("catalog", "workspace", "Existing Unity Catalog catalog")
+dbutils.widgets.text("catalog", "findora_hackathon", "Unity Catalog catalog (proposed shared catalog)")
 root_text = dbutils.widgets.get("project_root").strip()
 root = locate_project_root(root_text)
 notebook_path = None
@@ -63,7 +66,7 @@ if root is None:
     if notebook_path:
         print(f"Notebook workspace path: {notebook_path}")
     raise ValueError(
-        "Code folder not found. Open the Git folder on branch codex/databricks-serpapi, "
+        "Code folder not found. Open the Git folder on branch integration/databricks-unified, "
         "then open databricks/notebooks/01_ingest. Set the project_root widget to the "
         "copied workspace path of its databricks folder (containing findora_data AND config). "
         "A standalone copy of this notebook is not sufficient."
@@ -81,6 +84,7 @@ Path(raw_path).mkdir(parents=True, exist_ok=True)
 print(f"Upload collector JSON files into: {raw_path}")
 
 # COMMAND ----------
+
 # MAGIC %md
 # MAGIC The packaged `snapshots/` files are copied into the Volume below.
 # MAGIC Keep old responses: they are the observed history.
@@ -88,6 +92,7 @@ print(f"Upload collector JSON files into: {raw_path}")
 # MAGIC An empty approvals list is allowed: Bronze will populate, exact offers will remain empty.
 
 # COMMAND ----------
+
 from findora_data.package_upload import copy_snapshots
 
 if (root / "snapshots").is_dir():
@@ -105,6 +110,7 @@ counts = persist(spark, catalog, normalized)
 print(counts)
 
 # COMMAND ----------
+
 # Inspect candidates separately from verified offers. This table is NOT an exact-match comparison.
 review_path = Path(raw_path).parent / "review_queue.generated.json"
 review_path.write_text(json.dumps(normalized["review"], indent=2) + "\n")
@@ -118,12 +124,14 @@ display(spark.createDataFrame(review_rows,
     "product_id STRING, title STRING, retailer STRING, price DOUBLE, review_url STRING, issues STRING"))
 
 # COMMAND ----------
+
 display(spark.sql(f"SELECT * FROM `{catalog}`.gold.current_offers ORDER BY product_id, price"))
 display(spark.sql(f"SELECT * FROM `{catalog}`.gold.price_summary ORDER BY product_id"))
 display(spark.sql(f"SELECT * FROM `{catalog}`.gold.price_coverage ORDER BY product_id"))
 # Re-run ingestion on the same archive: counts must remain identical.
 
 # COMMAND ----------
+
 # A product option is separate from buy/wait timing advice. Only fresh reviewed offers qualify.
 demo_offers = spark.sql(f"""
 SELECT p.title, o.retailer, o.price, o.currency, o.product_url, o.observed_at,

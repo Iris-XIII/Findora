@@ -11,7 +11,7 @@ from databricks.sdk.core import Config
 st.set_page_config(page_title="Findora — Dig beneath the price", page_icon="🧥", layout="wide")
 st.title("Findora")
 st.write("Compare reviewed clothing offers and explore the prices we have actually observed.")
-catalog = os.environ.get("FINDORA_CATALOG", "workspace")
+catalog = os.environ.get("FINDORA_CATALOG", "findora_hackathon")
 if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_-]*", catalog):
     st.error("Invalid catalog configuration.")
     st.stop()
@@ -66,7 +66,12 @@ try:
         st.caption("Each point is an observed retailer price, not a forecast. All timestamps are UTC.")
         dates = history.observed_at.dt.date.nunique()
         span = history.observed_at.max() - history.observed_at.min()
-        if dates < 3 or span < pd.Timedelta(hours=48):
+        # DEMO HARD RULE: labeled demo data never produces real buy/wait advice,
+        # even when it satisfies the date/span thresholds.
+        is_demo = str(products.loc[products.product_id == selected, "data_status"].iloc[0]) == "demo"
+        if is_demo:
+            st.info("DEMO dataset — labeled seed data never produces real buy/wait advice, regardless of its date coverage.")
+        elif dates < 3 or span < pd.Timedelta(hours=48):
             st.info("INSUFFICIENT_DATA — not enough dated history for buy/wait advice.")
         else:
             st.info("Historical observations are available. Buy/wait rules are provided by the main application's backend.")

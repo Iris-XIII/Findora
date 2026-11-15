@@ -17,7 +17,8 @@ pass; notebook execution, permissions, backend integration, and deployment are n
 ## What you need to do first
 
 1. Open your Databricks Free Edition workspace. Record its workspace URL.
-2. Open Catalog Explorer and note an existing writable catalog (often `workspace`).
+2. Open Catalog Explorer. The proposed shared catalog is `findora_hackathon`
+   (owned by B; confirm with the backend owner before switching).
 3. Open SQL Warehouses and record the warehouse ID and connection HTTP path.
 4. Create/sign in to your SerpAPI account and check your remaining search allowance.
    Keep the API key in your terminal environment or private gitignored `databricks/.env`,
@@ -131,7 +132,8 @@ Use an existing catalog you can write to; no custom catalog or classic cluster i
    been pushed automatically.
 2. Open/import `notebooks/01_ingest.py` as a Python notebook and attach serverless compute.
 3. Set `project_root` to the workspace path ending in `/databricks`.
-4. Set `catalog` to your existing writable catalog, for example `workspace`.
+4. Set `catalog` to the proposed shared catalog `findora_hackathon` (confirm
+   with the backend owner before switching).
 5. Run only the first code cell. It creates schemas, empty Delta tables, and the Volume.
 6. In Catalog Explorer, open `<catalog>.bronze.serpapi_raw`. Create a `responses`
    directory and upload **all** collected JSON files there. The printed path is:
