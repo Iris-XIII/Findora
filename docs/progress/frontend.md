@@ -3,9 +3,55 @@
 **Status:** IN PROGRESS
 **Last updated:** 2026-11-15 (US Central)
 
+## Databricks App packaging: FastAPI + frontend on one origin (branch `iris/databricks-app-deploy`)
+
+Started from `origin/main` @ `c01c991`, then fast-forwarded (`git merge --ff-only origin/main`) to `aece95a` after `codex/backend-databricks` was merged into `main`. No backend-owned, Databricks pipeline, or approval files changed by this work. Not committed, pushed, or deployed as of this update.
+
+### What changed
+- `frontend/index.html`: `VITE_API_URL=same-origin` (or `window.FINDORA_API_URL='same-origin'`) resolves the API base to `location.origin`. On `file://` there is no origin, so it falls through to the next setting. Explicit URLs, the `localhost:8000` fallback, demo/API modes, the `/discover` 404 fallback, and Collection behavior are unchanged. `frontend/.env.example` documents the option.
+- `deploy/findora-app/server.py`, the App entry point:
+  - Sets `DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/<id>` from `DATABRICKS_WAREHOUSE_ID` (the App's `sql-warehouse` resource) unless an HTTP path is already set. A malformed ID stops startup.
+  - Imports the existing `backend.app.main:app` unchanged.
+  - Mounts the compiled frontend at `/` **after** the API routes, so `/health`, `/products/*`, `/docs`, and `/openapi.json` keep priority, and unknown paths such as `/discover` return 404 JSON.
+  - Reads no credentials: Databricks auth stays inside the backend (Databricks SDK unified auth, i.e. the App service principal).
+- `deploy/findora-app/app.yaml`: `uvicorn server:app --host 0.0.0.0 --port $DATABRICKS_APP_PORT`; env `DATABRICKS_WAREHOUSE_ID` (valueFrom `sql-warehouse`), `FINDORA_DATA_MODE=databricks`, `FINDORA_CATALOG=findora_hackathon`.
+- `deploy/findora-app/requirements.txt`: runtime only (fastapi, uvicorn[standard], databricks-sql-connector, databricks-sdk).
+- `scripts/build_databricks_app.sh`:
+  - `npm ci`, then a frontend build with `VITE_API_URL=same-origin VITE_DEFAULT_MODE=api`. It fails if the build is not configured that way.
+  - Copies only `backend/app/**/*.py` (no tests) plus the three deploy files into `build/databricks-app/` (git-ignored via `/build/`). That folder is the App source root.
+  - It is repeatable, but only deletes a previous output folder that carries its marker file, and refuses the repo root and source folders.
+  - It fails on missing inputs, on any file outside the allow-list (`app.yaml`, `requirements.txt`, `server.py`, `backend/app/*.py`, `static/index.html`), on mock/fixture/test/.env/key/`databricks` paths, on secret-like strings, and on mock references in the built page.
+
+### VERIFIED (local; demo mode + offline checks — no workspace, no real warehouse)
+- Full frontend regression suite: **145/145** (Phases A–D).
+- Build-script checks on a scratch copy: refuses the repo root and folders it did not create; leaves out backend tests, `test_*.py`, and `.env`; fails on a mock module, a token-like string, or a missing `package-lock.json` or `backend/app/main.py`; rebuilds cleanly.
+- The combined app was run from the staging folder with the `app.yaml` command (uvicorn `server:app`):
+  - `/health` and all `/products/*` routes return the backend's JSON; an unknown product returns 404 JSON; `/discover` returns 404, so the frontend falls back to catalog search.
+  - `/` serves the same-origin build, and `/.env`, `/app.yaml`, `/server.py` are not served.
+  - Headless Chrome on both `localhost` and `127.0.0.1` origins: 9/9 each. The API base equals the page origin, every request stays on that origin, the catalog, search fallback, product detail, and saved-link persistence work, and `?mode=demo` still works.
+- Rebuilt `build/databricks-app/` from the **merged** backend on `main` @ `aece95a`:
+  - The package's `backend/app/{main,gold,service,sample_data,__init__}.py` are byte-identical to the repo's.
+  - It contains no tests, examples, README, mocks, fixtures, `.env`, `databricks/`, `node_modules`, or keys, no secret patterns, and no mock references. The page is configured for `same-origin` and defaults to API mode.
+- The merged-backend package runs with the `app.yaml` command:
+  - Demo mode: `/health` and all `/products/*` return 200 JSON; an unknown product returns 404; `/discover` returns 404, so the frontend falls back; `/docs` and `/openapi.json` work; `/.env`, `/app.yaml`, `/server.py`, and `/backend/app/gold.py` are not served. Headless Chrome scored 9/9 on both `localhost` and `127.0.0.1`.
+  - Databricks mode with **no credentials** (offline, SDK config disabled): `/health` and `/products/*` return the backend's generic 503, `/` still serves the page, and no credential strings appear in the logs.
+- The full frontend regression suite against the merged `backend/`: **145/145**.
+
+### Blockers / workspace items to verify
+- RESOLVED: the Databricks-backed FastAPI (`create_app`, `gold.py`, `service.py`) is in `main` @ `aece95a` and in this branch via fast-forward. A deployed App with `FINDORA_DATA_MODE=databricks` will query Gold, provided the workspace items below are in place.
+- Workspace items to verify:
+  - the SQL warehouse ID, and an App resource `sql-warehouse` with **Can use**
+  - the App service principal's `USE CATALOG findora_hackathon`, `USE SCHEMA findora_hackathon.gold`, and `SELECT` on `product_catalog`, `current_offers`, `product_offers`
+  - Free Edition App limits and the 24-hour auto-stop (the Streamlit companion app may need to make room)
+  - App URL access (**Can use** for teammates and judges)
+  - Databricks CLI installed and logged in
+- Assumptions to confirm in the App runtime: `$DATABRICKS_APP_PORT` is expanded in `command`; `requirements.txt` is installed from the source root; the prebuilt `static/index.html` is used (no npm build in Databricks).
+- Live Databricks mode is untested. The 24-hour freshness window still applies to verified offers.
+- The packaged build defaults to API mode (`VITE_DEFAULT_MODE=api`); `?mode=demo` remains available.
+
 ## Discover: universal saving + on-demand discovery UI (branch `iris/discover-ui`, Phase A)
 
-Based on `origin/main` @ `362a377`, which includes PR #2. Frontend only: no backend, Databricks, or shared-contract files changed. The backend `GET /discover` endpoint is **not built yet** (it is waiting for backend-teammate approval), so discovery runs against a mock API. Not committed, pushed, or deployed as of this update.
+Based on `origin/main` @ `362a377`, which includes PR #2. Frontend only: no backend, Databricks, or shared-contract files changed. The backend `GET /discover` endpoint is **not built yet** (it is waiting for backend-teammate approval), so discovery runs against a mock API. Committed as `d743d8c` and merged to `main` in PR #3 (`c01c991`).
 
 ### What changed
 - **Universal saving.**
