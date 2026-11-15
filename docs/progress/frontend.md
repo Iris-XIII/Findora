@@ -1,11 +1,73 @@
 # Frontend progress
 
 **Status:** IN PROGRESS
-**Last updated:** 2026-11-14 (US Central)
+**Last updated:** 2026-11-15 (US Central)
+
+## Discover: universal saving + on-demand discovery UI (branch `iris/discover-ui`, Phase A)
+
+Based on `origin/main` @ `362a377`, which includes PR #2. Frontend only: no backend, Databricks, or shared-contract files changed. The backend `GET /discover` endpoint is **not built yet** (it is waiting for backend-teammate approval), so discovery runs against a mock API. Not committed, pushed, or deployed as of this update.
+
+### What changed
+- **Universal saving.**
+  - Searching a retailer product URL (http/https) always shows a "Save to My Collection" card, in demo and API mode, even when discovery fails.
+  - The title comes from the URL path. The URL is stored but **never opened, fetched, or verified**, and its `#fragment` is dropped.
+  - Rejected URLs: localhost, IP addresses, `.local`/`.internal` hosts, URLs with credentials, non-http(s) schemes, and URLs over 2048 characters.
+- **Manual entry.** "Add it manually" forms under the search results and in My Collection take a name (required), retailer, URL, the price you saw (optional, $0–$100,000), and a category. The item saves immediately.
+- **Local snapshot store.** `localStorage['findora-saved-discoveries']` = `{id → snapshot}`, with ids `url:<hash>`, `manual:<uuid>`, and `discovered:<id>`.
+  - A `:` never appears in a canonical Gold `product_id`, so these never collide with catalog items and never call `/products/{id}`.
+  - Every stored entry is re-validated on load; malformed entries, `javascript:` links, and invalid prices are dropped.
+  - Canonical saves keep using `findora-saved-products` (unchanged).
+- **My Collection.** Unverified items show alongside catalog items, with "Saved link", "Added by you", or "Unverified discovery" badges and their price wording.
+  - Category filters, removal, and persistence across reloads all work.
+  - "Reset saved items & budget" and "Delete profile" also clear the local store.
+  - Free-text titles check coat/jacket words first, so "Hooded Parka" is filed under Jackets & coats. The catalog's `collectionCategory()` rule is unchanged.
+- **Budget.** The calculation is unchanged: only exact USD catalog offers count. Unverified items are listed as "Unverified listing price ($X) — not counted" or "Price you entered — not counted".
+- **Discover results (API mode).**
+  - A non-empty search calls `GET /discover?q=`. If the API returns 404 (no discovery route), the app falls back to `/products/search`, shows a notice, and stops trying `/discover` until the mode changes.
+  - An empty search still lists the catalog. Demo mode is unchanged, apart from URL saving and manual entry.
+  - Results appear in three separate groups:
+    - **In Findora catalog**: each card says "Possible catalog match · reason. Not confirmed as the exact item you searched for." High-scoring matches are never presented as exact.
+    - **Discovered listings (Unverified)**: listed price, observation time, source/provenance, a link (a Google redirect shows as "View listing on Google Shopping"; placeholder hosts are never linked), and save.
+    - **Similar in catalog**: alternatives with reasons; a null price shows "No current price". Clicking one opens the existing product detail flow.
+  - A `discovery_status` banner covers unavailable, rate_limited, budget_exhausted, disabled, cached, and skipped_catalog_match. Mock responses always show a "MOCK DISCOVERY DATA" banner and a "Mock fixture" tag.
+- **Unverified item detail.** No `/offers`, `/history`, or `/advice` requests are made. The view shows the stored listing (price labeled unverified, with source and timestamp), "Not tracked by Findora yet", and advice fixed at INSUFFICIENT DATA ("Unverified items are never used for buy/wait guidance").
+
+### Mock API (dev/test only)
+- `frontend/scripts/mock-api.mjs` (Node standard library; `npm run mock-api`, port 8001) implements the **proposed** `/discover` contract.
+  - Catalog matches and similar items are computed by simple token scoring against the upstream catalog (`FINDORA_UPSTREAM`, default `http://127.0.0.1:8000`).
+  - Discovered listings come from `frontend/mock/discover-fixtures.json`.
+  - All other GET routes pass through to the upstream backend unchanged.
+- The fixtures are synthetic. Every title contains "MOCK", every retailer ends in "(mock)", product links use `example.com` placeholders, and one scenario uses a dummy Google redirect URL (`https://www.google.com/url?q=mock-listing`) to exercise that display path.
+- Trigger keywords: `mock-unavailable`, `mock-ratelimit`, `mock-error` (503), `mock-malformed`.
+- Nothing in production points at the mock. `.env.example` still targets `:8000`, the default API URL is `http://localhost:8000`, and `vite build` outputs only `dist/index.html`, with no mock references (verified by grep).
+- Proposed `/discover` response shape:
+  - Top-level fields: `query`, `input_type`, `interpreted`, `catalog_matches[]` (Product + `match_reason`/`match_score`), `discovered[]`, `similar[]` (SimilarProduct), `discovery_status`, `notices[]`, and `mock` (mock only).
+  - Each `discovered[]` entry: `candidate_id`, `title`, `retailer`, `listed_price`, `currency`, `url`, `url_kind`, `observed_at`, `provenance`, `verification: "unverified"`, `problems[]`.
+  - It still needs team agreement and a `docs/decisions.md` entry before backend implementation.
+
+### VERIFIED (local; mock and backend demo mode only — no SerpAPI, no Databricks)
+- `npm run build`: passes. `git diff --check`: passes. `npm ci --dry-run`: the lockfile is consistent (no dependency changes; `package.json` only gains the `mock-api` script).
+- Headless-Chrome suite (CDP, no new dependencies): **145/145 checks passed** in one full run.
+
+| Suite | Setup | Result |
+|---|---|---|
+| Phase A–C regression (config, catalog, verified offers, history fallback, advice guards, errors, retry, malformed data, budget, onboarding/collection) | fixture API, backend demo mode, local demo | 97/97 |
+| Discover via mock: URL saving (also during a 503), unsafe URL rejected, 3 result groups, labels, Google listing link, saving and detail view (no `/products/*` calls), manual entry and validation, filters, budget exclusion, removal and reload, malformed candidates, tampered storage, reset | mock-api → backend demo mode | 41/41 |
+| Discover fallback (API without `/discover`) | fixture API | 3/3 |
+| Discover in local demo mode (URL save + manual entry, no API calls) | none | 4/4 |
+
+- Test scripts live outside the repo, in the session scratchpad, and are not committed.
+
+### Known limitations / blockers
+- **The backend `/discover` endpoint does not exist yet.** Real SerpAPI discovery, real catalog scoring, and non-null similar-item prices are untested. The backend branch (`iris/discover-api`) is waiting for teammate approval.
+- The `/discover` contract is a proposal; shared docs (`docs/api-contract.md`, `docs/decisions.md`) are not updated yet.
+- Unverified items live only in this browser (localStorage). They are not synced across devices and are lost if site data is cleared.
+- There is no automated path from a saved discovery to a verified catalog product. Promotion uses the existing manual Databricks flow (manifest → collect → review → approve).
+- The 24-hour freshness window and the Databricks-mode blockers below still apply to verified prices.
 
 ## Frontend → FastAPI integration (branch `iris/frontend-api-integration`)
 
-Based on `origin/feature/frontend` @ `100f5dc`. Not yet merged with `main`: a dry-run `git merge-tree` against `origin/main` @ `6599466` reported no conflicts, because `main` only changed `databricks/**` and `docs/progress/databricks.md`. Not committed, pushed, or deployed as of this update.
+Based on `origin/feature/frontend` @ `100f5dc`. Committed as `ff79bb1` and merged to `main` in PR #2 (`362a377`).
 
 ### Architecture and configuration
 - The active app is the single self-contained `frontend/index.html` (inline CSS + script). Vite serves and builds it. `src/main.jsx` and `src/style.css` are starter files the page does not load; they are left untouched.
