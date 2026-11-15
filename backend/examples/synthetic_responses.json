@@ -1,0 +1,80 @@
+{
+  "notice": "Synthetic test responses only, not live warehouse evidence. Product test and retailer Test retailer are fictional.",
+  "responses": {
+    "/health": {
+      "status": "ok",
+      "data_mode": "observed"
+    },
+    "/products/search?q=Test": {
+      "items": [
+        {
+          "product_id": "test",
+          "title": "Test clothing",
+          "brand": "Test",
+          "category": "sweatshirt",
+          "image_url": null,
+          "description": null,
+          "data_status": "observed"
+        }
+      ]
+    },
+    "/products/test": {
+      "product_id": "test",
+      "title": "Test clothing",
+      "brand": "Test",
+      "category": "sweatshirt",
+      "image_url": null,
+      "description": null,
+      "data_status": "observed"
+    },
+    "/products/test/offers": {
+      "product_id": "test",
+      "offers": [
+        {
+          "offer_id": "0",
+          "retailer": "Test retailer",
+          "price": 10.0,
+          "currency": "USD",
+          "url": "https://example.com/test",
+          "observed_at": "2026-11-15T04:39:10.097900+00:00",
+          "match_type": "exact",
+          "source_type": "snapshot"
+        }
+      ]
+    },
+    "/products/test/history": {
+      "product_id": "test",
+      "observations": [
+        {
+          "observed_at": "2026-11-15T04:39:10.097900+00:00",
+          "price": 10.0,
+          "currency": "USD",
+          "retailer": "Test retailer",
+          "source_type": "snapshot"
+        }
+      ],
+      "data_status": "observed"
+    },
+    "/products/test/advice": {
+      "product_id": "test",
+      "decision": "INSUFFICIENT_DATA",
+      "explanation": "Need a fresh reviewed offer and at least 3 UTC observation dates spanning 48 hours.",
+      "evidence": [
+        {
+          "observation_count": 1,
+          "distinct_observation_dates": 1,
+          "span_hours": 0.0,
+          "first_observed_at": "2026-11-15T04:39:10.097900+00:00",
+          "last_observed_at": "2026-11-15T04:39:10.097900+00:00",
+          "current_lowest_price": 10.0,
+          "median_observed_price": 10.0
+        }
+      ],
+      "data_status": "insufficient"
+    },
+    "/products/test/similar": {
+      "product_id": "test",
+      "items": []
+    }
+  }
+}
