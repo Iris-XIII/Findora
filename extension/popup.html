@@ -3,17 +3,91 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Findora</title>
+    <meta name="theme-color" content="#fff2c9">
+    <title>Findora — Price Intelligence</title>
     <link rel="stylesheet" href="popup.css">
   </head>
   <body>
-    <main>
-      <h1>Findora</h1>
-      <p class="page" id="page">Reading the active tab…</p>
-      <button id="go" type="button">Analyze this page</button>
-      <p id="status" role="status" aria-live="polite"></p>
-      <pre id="out" aria-live="polite"></pre>
-    </main>
+    <div class="popup-layout">
+      <header class="brandbar">
+        <div class="brand">
+          <a class="wordmark" href="#" aria-label="Findora">findora<span>.</span></a>
+          <p class="tagline">Shop with insight</p>
+        </div>
+        <span class="active-view"><span aria-hidden="true">↗</span> Price Intelligence</span>
+      </header>
+
+      <main class="content">
+        <section class="screen" id="inspect-screen" aria-labelledby="hero-title">
+          <section class="hero" aria-labelledby="hero-title">
+            <div>
+              <p class="eyebrow">PAGE ANALYSIS</p>
+              <h1 id="hero-title">Inspect this find.</h1>
+              <p class="hero-copy">The demo fixture is synthetic and is not matched to the active page.</p>
+            </div>
+            <div class="page-card">
+              <span class="page-label">ACTIVE BROWSER PAGE</span>
+              <p class="page" id="page">Reading the active tab…</p>
+            </div>
+            <button class="primary" id="go" type="button">Run analysis <span aria-hidden="true">→</span></button>
+          </section>
+        </section>
+
+        <section class="screen" id="analysis-screen" aria-labelledby="results-title" hidden>
+          <section class="panel" aria-labelledby="results-title">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">SYNTHETIC SEED FIXTURE</p>
+                <h1 id="results-title">Demo analysis</h1>
+              </div>
+              <span class="decision-tag" id="decision">INSUFFICIENT_DATA</span>
+            </div>
+
+            <p id="status" class="status" role="status" aria-live="polite">
+              Demo analysis is ready. Values are synthetic, not verified market data.
+            </p>
+
+            <div class="product-summary">
+              <div>
+                <p class="product-label">DEMO PRODUCT</p>
+                <h2 id="product-title">NorthPeak Fleece Hoodie</h2>
+                <p id="product-meta">NorthPeak · Charcoal / L</p>
+              </div>
+              <div class="latest-price">
+                <span>Latest fixture value</span>
+                <strong id="current-price">$49.99</strong>
+              </div>
+            </div>
+
+            <div class="insight" id="analysis-summary">
+              The synthetic sample moves from $59.99 to $49.99 across 3 dated fixture points. It is not a real price trend or buying recommendation.
+            </div>
+
+            <div class="history-heading">
+              <p class="eyebrow">SAMPLE PRICE HISTORY</p>
+              <span id="observation-count">3 synthetic points</span>
+            </div>
+            <svg class="history-chart" id="history-chart" viewBox="0 0 660 80" role="img">
+              <title>Demo sample price history</title>
+            </svg>
+          </section>
+
+          <section class="next-find" aria-labelledby="next-find-title">
+            <div>
+              <p class="eyebrow">KEEP EXPLORING</p>
+              <h2 id="next-find-title">Inspect a new find</h2>
+            </div>
+            <div class="next-actions">
+              <button class="secondary" id="inspect-new-find" type="button">Back to inspection</button>
+              <button class="primary" id="open-homepage" type="button">Open Findora homepage</button>
+            </div>
+            <p class="action-status" id="action-status" role="status" aria-live="polite"></p>
+          </section>
+        </section>
+
+        <footer class="footer">Demo only · No live retailer data or verified recommendation.</footer>
+      </main>
+    </div>
     <script src="popup.js"></script>
   </body>
 </html>

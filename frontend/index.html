@@ -509,6 +509,24 @@
   <script>
     const API = window.FINDORA_API_URL || 'http://localhost:8000';
     const DEFAULT_BUDGET = 300;
+    const extensionDemoEntry = new URLSearchParams(window.location.search).get('fromExtension') === '1';
+
+    function createExtensionDemoProfile() {
+      return {
+        name: 'Demo Shopper',
+        age: 18,
+        minPrice: 0,
+        maxPrice: 150,
+        budget: DEFAULT_BUDGET,
+        categories: ['sweatshirts'],
+        otherCategory: '',
+        size: '',
+        fit: '',
+        colors: '',
+        brands: '',
+      };
+    }
+
     const $ = (id) => document.getElementById(id);
     const DEMO_PRODUCTS = [
       { product_id: 'northpeak-fp-hood-100', title: 'NorthPeak Fleece Hoodie', brand: 'NorthPeak', category: 'hoodie', model: 'FP-HOOD-100', variant: 'Charcoal / L', interest: 'sweatshirts', image_url: null, description: 'SEED DEMO catalog fixture. This product and its example prices are synthetic, not a real listing.', data_status: 'demo' },
@@ -578,8 +596,8 @@
       savedIds: loadSaved(),
       savedPrices: Object.create(null),
       savedErrors: Object.create(null),
-      profile: loadProfile(),
-      mode: loadMode(),
+      profile: loadProfile() || (extensionDemoEntry ? createExtensionDemoProfile() : null),
+      mode: extensionDemoEntry ? 'demo' : loadMode(),
       budget: DEFAULT_BUDGET,
       collectionFilter: 'all',
       searchController: null,

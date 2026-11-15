@@ -3,8 +3,14 @@
   "name": "Findora",
   "version": "1.0.0",
   "description": "A demo browser extension for Findora.",
+  "icons": {
+    "128": "icon128.png"
+  },
   "permissions": ["activeTab"],
   "action": {
+    "default_icon": {
+      "128": "icon128.png"
+    },
     "default_popup": "popup.html",
     "default_title": "Findora"
   }
