@@ -1,1 +1,1965 @@
-<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>Findora</title></head><body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fff2c9">
+  <title>Findora — clothing, with context</title>
+  <style>
+    :root {
+      font-family: "Helvetica", "Helvetica Neue", Arial, sans-serif;
+      color: #303b54;
+      background: linear-gradient(115deg, #ffffff 0%, #fff2c9 48%, #cbd7ef 100%);
+      background-attachment: fixed;
+      --accent: #778fc7;
+      --accent-dark: #4f6597;
+      --accent-light: #e8edf8;
+      --beige: #fff2c9;
+      --yellow: #fff2c9;
+      --muted: #78839a;
+      --line: #dce2f0;
+      --red: #a64c38;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .layout { min-height: 100vh; display: grid; grid-template-columns: 235px minmax(0, 1fr); }
+    .sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 28px 19px; gap: 25px; border-right: 1px solid var(--line); background: #ffffffa8; backdrop-filter: blur(14px); }
+    .wordmark { color: var(--accent-dark); text-decoration: none; font-family: "TAN Nimbus", "Tan Nimbus", Georgia, serif; font-size: 30px; font-weight: 500; letter-spacing: -.035em; text-transform: uppercase; }
+    .wordmark span { color: #778fc7; }
+    .tagline { margin: 3px 0 0; color: var(--muted); font-size: 11px; letter-spacing: 1.7px; text-transform: uppercase; }
+    .nav { display: grid; gap: 7px; }
+    .nav button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border: 0; border-radius: 11px; background: transparent; color: #68748e; text-align: left; }
+    .nav button:hover, .nav button.active { background: var(--accent-light); color: var(--accent-dark); font-weight: 750; }
+    .nav-symbol { width: 23px; font-size: 18px; text-align: center; }
+    .sidebar-card { margin-top: auto; padding: 16px; border-radius: 15px; background: #ffffff80; font-size: 13px; line-height: 1.6; }
+    .sidebar-card b { color: var(--accent-dark); }
+    .sidebar-footer { color: #8c96aa; font-size: 11px; }
+    main { width: min(1240px, 100%); margin: 0 auto; padding: 38px clamp(20px, 5vw, 68px) 48px; }
+    .topline { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+    .top-actions { display: flex; align-items: center; gap: 14px; }
+    .mode-control { display: grid; gap: 4px; color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .8px; text-transform: uppercase; }
+    .mode-control select { min-width: 150px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: #ffffffdc; color: #303b54; font: inherit; letter-spacing: 0; text-transform: none; }
+    .mode-notice { margin: 0 0 20px; padding: 11px 14px; border: 1px solid #dce2f0; border-radius: 10px; background: #eef2fb; color: #4f5d7a; font-size: 12px; line-height: 1.5; }
+    .mode-notice.demo-notice { border-color: #e8dcae; background: #fff7db; color: #675a34; }
+    .eyebrow { margin: 0 0 9px; color: var(--accent); font-size: 10px; font-weight: 850; letter-spacing: 1.8px; text-transform: uppercase; }
+    h1, .hero h2, .section-heading h2 { font-family: "Druk Condensed Super", "Druk Condensed", "Arial Narrow", Impact, sans-serif; font-stretch: condensed; font-weight: 900; letter-spacing: -.025em; text-transform: uppercase; }
+    h1 { max-width: 680px; margin: 0; font-size: clamp(31px, 4vw, 45px); line-height: 1.08; }
+    .lede { max-width: 620px; margin: 13px 0 0; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .avatar { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: #cbd7ef; color: var(--accent-dark); font-weight: 800; }
+    .intro { margin: 0 0 27px; color: var(--muted); }
+    .saved-count { display: flex; align-items: center; gap: 7px; padding: 10px 13px; border: 1px solid var(--line); border-radius: 30px; background: white; color: var(--accent); white-space: nowrap; }
+    .saved-count span { color: #bd644c; }
+    .hero { display: flex; flex-direction: column; align-items: stretch; gap: 20px; margin: 25px 0; padding: 27px 30px; border-radius: 19px; background: linear-gradient(110deg, #cbd7ef, #fff2c9); color: #303b54; }
+    .hero > div { min-width: 0; }
+    .hero .eyebrow { color: #586e9f; }
+    .hero h2 { margin: 5px 0 0; font-size: 25px; }
+    .hero p { margin: 0; color: #58647c; font-size: 13px; }
+    .search { display: flex; align-items: center; gap: 10px; margin: 0; padding: 7px; border: 1px solid #dce2f0; border-radius: 13px; background: white; box-shadow: 0 7px 22px #263b2b08; }
+    .search-icon { padding-left: 12px; color: var(--accent); font-size: 24px; }
+    .search input { flex: 1; width: 0; min-width: 0; padding: 10px 2px; border: 0; outline: 0; color: #303b54; }
+    .search input::placeholder { color: #8b95a9; }
+    .primary { padding: 12px 19px; border: 0; border-radius: 10px; background: var(--accent); color: white; font-size: 13px; font-weight: 750; }
+    .primary:hover { background: var(--accent-dark); }
+    .primary:disabled { cursor: wait; opacity: .7; }
+    .section-heading, .panel-heading { display: flex; justify-content: space-between; align-items: end; gap: 15px; }
+    .section-heading { margin-bottom: 15px; }
+    .section-heading .eyebrow, .panel-heading .eyebrow { margin-bottom: 5px; }
+    h2 { margin: 0; font-size: 22px; letter-spacing: -.5px; }
+    h3 { margin: 0; font-size: 16px; }
+    .result-count, .panel-count { color: var(--muted); font-size: 12px; }
+    .product-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+    .product-card { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: white; transition: transform .18s ease, box-shadow .18s ease; }
+    .product-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px #263b2b0d; }
+    .product-open { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
+    .product-image { position: relative; display: grid; height: 164px; place-items: center; overflow: hidden; background: linear-gradient(140deg, #e5ebf7, #d4def2); color: #7489bc; font-size: 44px; }
+    .product-card:nth-child(3n + 2) .product-image { background: linear-gradient(140deg, #fff2c9, #f2e8cb); }
+    .product-card:nth-child(3n) .product-image { background: linear-gradient(140deg, #e8eaf7, #dce3f2); }
+    .product-image img { width: 100%; height: 100%; object-fit: cover; }
+    .category-chip { position: absolute; top: 12px; left: 12px; padding: 6px 9px; border: 1px solid #ffffffb3; border-radius: 30px; background: #ffffffed; color: var(--accent); font-size: 10px; font-weight: 750; }
+    .product-copy { padding: 15px 16px 17px; }
+    .product-brand { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+    .product-copy h3 { margin: 6px 0 13px; font-size: 15px; line-height: 1.4; }
+    .product-badges { display: flex; flex-wrap: wrap; gap: 5px; margin: -5px 0 10px; }
+    .product-link { color: var(--accent); font-size: 12px; font-weight: 750; }
+    .save-button { position: absolute; top: 11px; right: 11px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: #ffffffed; color: #68748e; font-size: 19px; }
+    .save-button.saved { color: #bd644c; }
+    .message, .empty-state { padding: 17px 19px; border: 1px solid var(--line); border-radius: 13px; background: white; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .message-error { border-color: #efd6cf; background: #fff8f5; color: var(--red); }
+    .retry { margin-left: 8px; padding: 0; border: 0; background: none; color: var(--accent); font-weight: 750; text-decoration: underline; }
+    .empty-state { padding: 35px 22px; text-align: center; }
+    .empty-state .symbol { color: #8fa4d1; font-size: 35px; }
+    .empty-state h3 { margin: 9px 0; font-size: 16px; }
+    .empty-state p { max-width: 520px; margin: auto; }
+    .saved-section, .detail-section { margin-top: 42px; }
+    .saved-list { display: grid; gap: 8px; }
+    .collection-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
+    .collection-filter { padding: 9px 12px; border: 1px solid var(--line); border-radius: 30px; background: white; color: var(--muted); font-size: 12px; font-weight: 700; }
+    .collection-filter.active { border-color: var(--accent); background: var(--accent-light); color: var(--accent-dark); }
+    .saved-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border: 1px solid var(--line); border-radius: 11px; background: white; color: #23332b; text-align: left; }
+    .saved-item span { flex: 1; font-weight: 700; }
+    .saved-item small { color: var(--muted); }
+    .saved-item b { color: var(--accent); font-size: 12px; }
+    .detail-section { padding-top: 29px; border-top: 1px solid var(--line); }
+    .detail-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; }
+    .detail-header h2 { font-size: 27px; }
+    .detail-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; flex-wrap: wrap; }
+    .detail-save-button { white-space: nowrap; }
+    .detail-save-button.saved { border-color: var(--accent); background: var(--accent); color: white; }
+    .detail-subtitle, .description { color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .detail-subtitle { margin: 7px 0 0; }
+    .description { margin: 12px 0 0; }
+    .tag { display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 30px; background: #edf0ec; color: #59665d; font-size: 10px; font-weight: 750; white-space: nowrap; }
+    .tag-demo { background: var(--beige); color: #765a2c; }
+    .tag-observed, .tag-live, .tag-exact { background: var(--accent-light); color: #4f6597; }
+    .tag-insufficient, .tag-unverified { background: #f3eee1; color: #82683c; }
+    .tag-snapshot { background: var(--accent-light); color: #4f6597; }
+    .tag-verified { background: var(--accent); color: white; }
+    .tag-historical { background: #edf0ec; color: #59665d; }
+    .offer-source { color: var(--muted); font-size: 11px; }
+    .last-observed { display: grid; justify-items: start; gap: 6px; margin-top: 10px; padding: 14px; border: 1px dashed #cfd6cc; border-radius: 11px; background: #fafbf9; }
+    .last-observed > b { color: var(--accent); font-size: 18px; }
+    .last-observed > span { color: var(--muted); font-size: 11px; }
+    .last-observed p { margin: 0; color: #6c665b; font-size: 12px; line-height: 1.6; }
+    .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; margin-top: 21px; }
+    .panel { min-width: 0; padding: 19px; border: 1px solid var(--line); border-radius: 15px; background: white; }
+    .panel-heading { align-items: center; margin-bottom: 14px; }
+    .panel-heading h3 { font-size: 17px; }
+    .offer-list, .observation-list, .similar-list { display: grid; }
+    .offer-row, .observation-row, .similar-row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid #edf0eb; }
+    .offer-info { display: grid; justify-items: start; gap: 5px; }
+    .offer-info > b { font-size: 13px; }
+    .offer-info > span, .observation-row small, .similar-row span { color: var(--muted); font-size: 11px; }
+    .offer-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+    .offer-price { display: grid; justify-items: end; align-content: start; gap: 6px; white-space: nowrap; }
+    .offer-price > b, .observation-row > b, .similar-row > b { color: var(--accent); font-size: 14px; }
+    .offer-price a { color: var(--accent); font-size: 11px; font-weight: 700; }
+    .chart-wrap { margin: 0 0 12px; padding: 6px 2px 3px; border-radius: 10px; background: #f5f7fc; }
+    .chart { display: block; width: 100%; height: auto; max-height: 210px; overflow: visible; }
+    .chart-axis { stroke: #dce2f0; stroke-width: 1; }
+    .chart-label { fill: #78839a; font-family: Helvetica, Arial, sans-serif; font-size: 11px; }
+    .chart-line { fill: none; stroke: #778fc7; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .chart-point { fill: white; stroke: #778fc7; stroke-width: 3; }
+    .chart-range { display: flex; justify-content: space-between; padding: 0 7px 6px; color: var(--muted); font-size: 10px; }
+    .observation-row { align-items: center; }
+    .observation-row span { display: grid; gap: 4px; color: #303b54; font-size: 12px; }
+    .advice-card { padding: 15px; border-radius: 11px; background: #edf1fa; }
+    .advice-card h4 { margin: 11px 0 6px; color: var(--accent-dark); font-size: 16px; }
+    .advice-card p, .advice-card li { color: #68748e; font-size: 12px; line-height: 1.6; }
+    .advice-card p { margin: 0; }
+    .advice-card ul { margin: 10px 0 0; padding-left: 18px; }
+    .advice-card p.evidence-heading { margin-top: 10px; font-weight: 700; }
+    .similar-row > div { min-width: 0; }
+    .similar-row > div > b, .similar-row span { display: block; }
+    .similar-row span { margin-top: 4px; }
+    .similar-row p { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .empty-note { margin: 0; padding: 13px 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 22px 0 28px; }
+    .stat { padding: 17px 19px; border: 1px solid var(--line); border-radius: 15px; background: white; }
+    .stat-label { color: var(--muted); font-size: 11px; }
+    .stat-value { margin: 6px 0; font-size: 24px; font-weight: 800; letter-spacing: -.7px; }
+    .stat-note { color: var(--accent); font-size: 11px; }
+    .budget-row { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+    .budget-row .form-field { flex: 1; }
+    .budget-row input { width: 130px; padding: 10px; border: 1px solid var(--line); border-radius: 9px; }
+    .outline { padding: 10px 13px; border: 1px solid #dce2f0; border-radius: 9px; background: white; color: var(--accent-dark); font-weight: 700; }
+    .progress { height: 11px; overflow: hidden; border-radius: 20px; background: #e9edf7; }
+    .progress-fill { width: 0; height: 100%; border-radius: inherit; background: var(--accent); transition: width .2s ease; }
+    .budget-list { margin-top: 15px; }
+    .home-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(270px, .85fr); gap: 15px; margin: 20px 0 30px; }
+    .home-grid .panel { height: 100%; }
+    .profile-summary { display: grid; gap: 10px; }
+    .profile-summary p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .profile-summary strong { color: #303b54; }
+    .home-actions, .profile-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+    .reset-button { border-color: #e6d9ba; color: #715c31; }
+    .search-dock { margin: 0; padding: 0; border: 0; background: transparent; }
+    .search-dock .search { width: 100%; margin: 0; }
+    .search-dock[hidden] { display: none; }
+    .price-results { margin: 5px 0 26px; }
+    .price-results .section-heading { align-items: center; }
+    .observation-meta { margin: 8px 0 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .profile-page-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+    .profile-form, .setup-form { display: grid; gap: 15px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .form-field { display: grid; gap: 6px; color: #53617c; font-size: 12px; font-weight: 700; }
+    .form-field input, .form-field select, .form-field textarea { width: 100%; min-width: 0; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #303b54; font: inherit; font-weight: 400; }
+    .form-field textarea { min-height: 80px; resize: vertical; }
+    .form-field input:focus, .form-field select:focus, .form-field textarea:focus { outline: 2px solid #9aaddb; outline-offset: 1px; }
+    .interest-fieldset { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; border: 0; }
+    .interest-fieldset legend { margin-bottom: 8px; color: #53617c; font-size: 12px; font-weight: 750; }
+    .interest-option { display: flex; align-items: center; gap: 8px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #58647c; font-size: 12px; }
+    .interest-option input { accent-color: var(--accent); }
+    .onboarding { display: grid; min-height: 100vh; place-items: center; padding: 24px; }
+    .onboarding-card { width: min(820px, 100%); padding: clamp(22px, 5vw, 44px); border: 1px solid #dce2f0; border-radius: 22px; background: #ffffffed; box-shadow: 0 24px 70px #27334e12; }
+    .onboarding-card .wordmark { display: inline-block; margin-bottom: 20px; }
+    .onboarding-card h1 { margin-bottom: 10px; }
+    .onboarding-card > p { max-width: 670px; color: var(--muted); font-size: 14px; line-height: 1.65; }
+    .privacy-note { padding: 11px 13px; border-radius: 9px; background: #f3f5fb; color: #606d87 !important; font-size: 12px !important; }
+    .form-message { min-height: 18px; color: var(--red); font-size: 12px; }
+    .form-message.success { color: #42684e; }
+    .collection-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+    .collection-row .thumb { display: grid; width: 48px; height: 48px; flex: 0 0 48px; place-items: center; border-radius: 10px; background: var(--accent-light); color: var(--accent); font-size: 23px; }
+    .collection-row .details { flex: 1; min-width: 0; }
+    .collection-row .details small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+    .collection-row > b { color: var(--accent-dark); font-size: 13px; white-space: nowrap; }
+    .view-prompt { max-width: 700px; margin: 30px auto; padding: 26px; border: 1px solid var(--line); border-radius: 16px; background: white; text-align: center; }
+    .view-prompt p { color: var(--muted); line-height: 1.6; }
+    .page-view[hidden], [hidden] { display: none !important; }
+    .footer { margin-top: 45px; padding-top: 17px; border-top: 1px solid var(--line); color: #929bb0; font-size: 10px; text-align: center; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    [hidden] { display: none !important; }
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 205px minmax(0, 1fr); }
+      .sidebar { padding: 25px 10px; }
+      .sidebar .nav-label, .sidebar .tagline, .sidebar-card, .sidebar-footer { display: none; }
+      .wordmark { font-size: 18px; text-align: center; }
+      .nav button { justify-content: center; padding: 11px 6px; }
+      .nav-symbol { width: auto; }
+      .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      main { padding: 24px 24px 48px; }
+      .home-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .layout { display: block; }
+      .sidebar { position: sticky; z-index: 3; top: 0; height: auto; flex-direction: row; align-items: center; padding: 9px 10px; gap: 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+      .sidebar > div:first-child { flex: 0 0 auto; }
+      .sidebar .nav-label { display: none; }
+      .nav { display: flex; flex: 1; justify-content: flex-end; gap: 3px; }
+      .nav button { width: auto; padding: 9px 10px; }
+      .nav-symbol { font-size: 17px; }
+      .sidebar-card, .sidebar-footer, .tagline { display: none; }
+      main { padding: 22px 16px 48px; }
+      .product-grid, .detail-grid, .stats { grid-template-columns: 1fr; }
+      .profile-page-grid, .form-grid { grid-template-columns: 1fr; }
+      .product-image { height: 185px; }
+      .hero { padding: 20px; }
+      .hero h2 { font-size: 22px; }
+      .topline { align-items: flex-start; }
+      .top-actions { gap: 8px; }
+      .mode-control select { min-width: 120px; max-width: 145px; padding: 8px; font-size: 11px; }
+    }
+    @media (max-width: 450px) {
+      .search { gap: 6px; }
+      .search input { font-size: 13px; }
+      .primary { padding: 11px 12px; }
+      .saved-item { flex-wrap: wrap; }
+      .saved-item span { flex-basis: 100%; }
+      .detail-header { display: block; }
+      .detail-actions { justify-content: flex-start; margin-top: 12px; }
+      .nav button { padding: 8px; }
+      .nav-symbol { font-size: 16px; }
+      .interest-fieldset { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <section class="onboarding" id="onboarding" aria-labelledby="setup-title">
+    <div class="onboarding-card">
+      <a class="wordmark" href="#" aria-label="Findora home">findora<span>.</span></a>
+      <p class="eyebrow">PERSONAL SHOPPING SETUP</p>
+      <h1 id="setup-title">Create your Findora profile.</h1>
+      <p>Tell us what you shop for and what fits your budget. Your profile helps shape this demo experience.</p>
+      <p class="privacy-note">Demo profile only: your details are saved in this browser and are not sent to Findora's API. This prototype does not create login credentials or a cloud account.</p>
+      <form class="setup-form" id="setup-form">
+        <div class="form-grid">
+          <label class="form-field" for="setup-name">Name
+            <input id="setup-name" name="name" autocomplete="name" maxlength="80" required>
+          </label>
+          <label class="form-field" for="setup-age">Age
+            <input id="setup-age" name="age" type="number" min="1" max="120" step="1" required>
+          </label>
+          <label class="form-field" for="setup-min-price">Preferred item price — minimum (USD)
+            <input id="setup-min-price" name="minPrice" type="number" min="0" max="100000" step="0.01" value="0" required>
+          </label>
+          <label class="form-field" for="setup-max-price">Preferred item price — maximum (USD)
+            <input id="setup-max-price" name="maxPrice" type="number" min="0" max="100000" step="0.01" value="150" required>
+          </label>
+          <label class="form-field" for="setup-budget">Overall shopping budget (USD)
+            <input id="setup-budget" name="budget" type="number" min="0" max="1000000" step="0.01" value="300" required>
+          </label>
+        </div>
+        <fieldset class="interest-fieldset" data-interest-group="setup">
+          <legend>What kinds of clothes do you like to shop for? Choose at least one.</legend>
+          <label class="interest-option"><input type="checkbox" value="sweatshirts"> Sweatshirts &amp; hoodies</label>
+          <label class="interest-option"><input type="checkbox" value="outerwear"> Jackets &amp; coats</label>
+          <label class="interest-option"><input type="checkbox" value="tops"> T-shirts &amp; tops</label>
+          <label class="interest-option"><input type="checkbox" value="denim"> Jeans &amp; denim</label>
+          <label class="interest-option"><input type="checkbox" value="accessories"> Accessories</label>
+          <label class="interest-option"><input type="checkbox" value="other"> Other</label>
+        </fieldset>
+        <label class="form-field" id="setup-other-category-field" hidden>Describe your other clothing interest
+          <input id="setup-other-category" name="otherCategory" maxlength="80" placeholder="e.g. activewear">
+        </label>
+        <button class="primary" type="submit">Create profile &amp; open Homepage</button>
+        <div class="form-message" id="setup-message" role="status" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>
+  <div class="layout" id="app-shell" hidden>
+    <aside class="sidebar">
+      <div>
+        <a class="wordmark" href="#" aria-label="Findora home">findora<span>.</span></a>
+        <p class="tagline">Shop with insight</p>
+      </div>
+      <nav class="nav" aria-label="Main navigation">
+        <button type="button" class="active" data-view="home" aria-label="Homepage"><span class="nav-symbol" aria-hidden="true">⌂</span><span class="nav-label">Homepage</span></button>
+        <button type="button" data-view="price-intelligence" aria-label="Price Intelligence"><span class="nav-symbol" aria-hidden="true">↗</span><span class="nav-label">Price Intelligence</span></button>
+        <button type="button" data-view="saved" aria-label="My Collection"><span class="nav-symbol" aria-hidden="true">♡</span><span class="nav-label">My Collection</span></button>
+        <button type="button" data-view="profile" aria-label="User Profile"><span class="nav-symbol" aria-hidden="true">◉</span><span class="nav-label">Profile</span></button>
+      </nav>
+      <div class="sidebar-card">
+        <b>✦ Findora</b>
+        <p>Find the right product, at the right price, at the right time.</p>
+      </div>
+      <div class="sidebar-footer">Interactive shopping prototype</div>
+    </aside>
+    <main>
+      <header class="topline">
+        <div>
+          <p class="eyebrow">YOUR INTELLIGENT SHOPPING WORKSPACE</p>
+          <h1 id="page-title">Homepage</h1>
+        </div>
+        <div class="top-actions">
+          <label class="mode-control" for="mode-select">Data source
+            <select id="mode-select">
+              <option value="demo">Clothing demo</option>
+              <option value="api">Live API</option>
+            </select>
+          </label>
+          <div class="avatar" id="avatar" aria-label="User profile">FI</div>
+        </div>
+      </header>
+      <p class="intro" id="page-intro">Your clothing finds, preferences, and budget in one place.</p>
+      <p class="mode-notice" id="mode-notice" role="status"></p>
+      <section id="home" class="page-view" aria-label="Homepage">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">YOUR FINDORA HOMEPAGE</p>
+            <h2 id="home-greeting">Welcome to Findora.</h2>
+          </div>
+          <div class="search-dock" id="search-dock" hidden>
+            <form class="search" id="search-form">
+              <label class="visually-hidden" for="search-input">Search clothing, brand, or by URL</label>
+              <span class="search-icon" aria-hidden="true">⌕</span>
+              <input id="search-input" type="search" placeholder="Search clothing, brand, or by URL" autocomplete="off">
+              <button class="primary" id="search-button" type="submit">Search <span aria-hidden="true">→</span></button>
+            </form>
+          </div>
+        </div>
+        <div class="home-grid">
+          <section class="panel profile-summary" aria-labelledby="home-profile-title">
+            <div class="panel-heading"><div><p class="eyebrow">YOUR SHOPPING PROFILE</p><h3 id="home-profile-title">Preferences</h3></div><span class="panel-count" id="saved-stat">0 saved</span></div>
+            <div id="home-profile-summary"></div>
+            <div class="home-actions">
+              <button type="button" class="outline" data-view="profile">Edit profile</button>
+              <button type="button" class="outline reset-button" id="reset-demo">Reset saved items &amp; budget</button>
+            </div>
+            <div class="form-message" id="reset-message" role="status" aria-live="polite"></div>
+          </section>
+          <section class="panel" aria-labelledby="budget-title">
+            <div class="panel-heading"><div><p class="eyebrow">PLAN YOUR SPENDING</p><h3 id="budget-title">My budget</h3></div><span class="panel-count" id="budget-stat"></span></div>
+            <p class="empty-note">Only exact USD offers count toward this planning total. Demo offers are clearly labeled.</p>
+            <div class="budget-row">
+              <label class="form-field" for="budget-input">Budget (USD)
+                <input id="budget-input" type="number" min="0" max="1000000" step="0.01" value="300">
+              </label>
+              <button type="button" class="outline" id="save-budget">Update</button>
+            </div>
+            <h2 id="budget-total">Saved offer total unavailable</h2>
+            <p class="empty-note" id="budget-message">Save products to compare their offers against your budget.</p>
+            <div class="progress" aria-label="Budget used"><div class="progress-fill" id="budget-progress"></div></div>
+            <div class="budget-list" id="budget-list"></div>
+          </section>
+        </div>
+        <div class="section-heading">
+          <div><p class="eyebrow">CLOTHING CATALOG</p><h2 id="results-title">Picked for your interests</h2></div>
+          <span class="result-count" id="result-count"></span>
+        </div>
+        <div id="home-message" aria-live="polite"></div>
+        <div class="product-grid" id="product-grid"></div>
+      </section>
+      <section class="page-view saved-section" id="saved" aria-labelledby="saved-title" hidden>
+        <div class="section-heading">
+          <div><p class="eyebrow">YOUR SHORTLIST</p><h2 id="saved-title">Saved finds</h2></div>
+          <span class="result-count" id="saved-total"></span>
+        </div>
+        <div class="collection-filters" id="collection-filters" role="group" aria-label="Filter saved clothing by category"></div>
+        <p class="empty-note">Your saved items are stored in this browser.</p>
+        <div class="saved-list" id="saved-list"></div>
+        <div id="storage-message"></div>
+      </section>
+      <section class="page-view" id="price-intelligence" aria-label="Price intelligence" hidden>
+        <section class="price-results" id="price-results" aria-labelledby="price-results-title">
+          <div class="section-heading">
+            <div><p class="eyebrow">CATALOG RESULTS</p><h2 id="price-results-title">Search clothing</h2></div>
+            <span class="result-count" id="price-result-count"></span>
+          </div>
+          <div id="price-search-message" aria-live="polite"></div>
+          <div class="product-grid" id="price-product-grid"></div>
+        </section>
+        <div class="view-prompt" id="price-prompt">
+          <p class="eyebrow">PRICE INTELLIGENCE</p>
+          <h2 id="price-prompt-title">Search or select a clothing item.</h2>
+          <p id="price-prompt-copy">Return to Homepage to search, then select a product from the catalog results to inspect its price intelligence.</p>
+          <button type="button" class="outline" data-view="home">Go to Homepage</button>
+        </div>
+        <section class="detail-section" id="detail-section" aria-labelledby="detail-title" hidden>
+          <div class="detail-header">
+            <div>
+              <p class="eyebrow">PRODUCT INTELLIGENCE</p>
+              <h2 id="detail-title"></h2>
+              <p class="detail-subtitle" id="detail-subtitle"></p>
+            </div>
+            <div class="detail-actions">
+              <span class="tag" id="product-status"></span>
+              <button type="button" class="outline detail-save-button" id="detail-save-button">Add to Collection</button>
+            </div>
+          </div>
+          <p class="description" id="product-description"></p>
+          <p class="observation-meta" id="detail-evidence-meta"></p>
+          <div class="message" id="detail-loading" role="status" hidden>Loading product evidence…</div>
+          <div class="detail-grid">
+            <section class="panel" aria-labelledby="offers-title">
+              <div class="panel-heading"><div><p class="eyebrow">LISTED PRICES</p><h3 id="offers-title">Offers</h3></div><span class="panel-count" id="offers-count"></span></div>
+              <div id="offers-content"></div>
+            </section>
+            <section class="panel" aria-labelledby="history-title">
+              <div class="panel-heading"><div><p class="eyebrow">OBSERVED RECORDS</p><h3 id="history-title">Price history</h3></div><span class="panel-count" id="history-count"></span></div>
+              <div id="history-content"></div>
+            </section>
+            <section class="panel" aria-labelledby="advice-title">
+              <div class="panel-heading"><div><p class="eyebrow">EVIDENCE-BASED GUIDANCE</p><h3 id="advice-title">Buy or wait?</h3></div></div>
+              <div id="advice-content"></div>
+            </section>
+            <section class="panel" aria-labelledby="similar-title">
+              <div class="panel-heading"><div><p class="eyebrow">OTHER OPTIONS</p><h3 id="similar-title">Similar clothing</h3></div><span class="panel-count" id="similar-count"></span></div>
+              <div id="similar-content"></div>
+            </section>
+          </div>
+        </section>
+      </section>
+      <section class="page-view" id="profile" aria-labelledby="profile-title" hidden>
+        <div class="section-heading">
+          <div><p class="eyebrow">YOUR ACCOUNT DETAILS</p><h2 id="profile-title">User profile</h2></div>
+        </div>
+        <p class="privacy-note">This is a local demo profile, not a sign-in account. Your information stays in this browser unless you clear it.</p>
+        <div class="profile-page-grid">
+          <section class="panel">
+            <form class="profile-form" id="profile-form">
+              <div class="form-grid">
+                <label class="form-field" for="profile-name">Name
+                  <input id="profile-name" name="name" autocomplete="name" maxlength="80" required>
+                </label>
+                <label class="form-field" for="profile-age">Age
+                  <input id="profile-age" name="age" type="number" min="1" max="120" step="1" required>
+                </label>
+                <label class="form-field" for="profile-min-price">Preferred item price — minimum (USD)
+                  <input id="profile-min-price" name="minPrice" type="number" min="0" max="100000" step="0.01" required>
+                </label>
+                <label class="form-field" for="profile-max-price">Preferred item price — maximum (USD)
+                  <input id="profile-max-price" name="maxPrice" type="number" min="0" max="100000" step="0.01" required>
+                </label>
+                <label class="form-field" for="profile-budget">Starting budget (USD)
+                  <input id="profile-budget" name="budget" type="number" min="0" max="1000000" step="0.01" required>
+                </label>
+                <label class="form-field" for="profile-size">Preferred size
+                  <input id="profile-size" name="size" maxlength="30" placeholder="e.g. M or 32">
+                </label>
+                <label class="form-field" for="profile-fit">Preferred fit
+                  <select id="profile-fit" name="fit">
+                    <option value="">Not specified</option>
+                    <option>Regular</option>
+                    <option>Relaxed</option>
+                    <option>Slim</option>
+                    <option>Oversized</option>
+                  </select>
+                </label>
+                <label class="form-field" for="profile-colors">Favorite colors
+                  <input id="profile-colors" name="colors" maxlength="120" placeholder="e.g. navy, black">
+                </label>
+                <label class="form-field" for="profile-brands">Favorite brands (optional)
+                  <input id="profile-brands" name="brands" maxlength="160" placeholder="Separate brands with commas">
+                </label>
+              </div>
+              <fieldset class="interest-fieldset" data-interest-group="profile">
+                <legend>Clothing interests</legend>
+                <label class="interest-option"><input type="checkbox" value="sweatshirts"> Sweatshirts &amp; hoodies</label>
+                <label class="interest-option"><input type="checkbox" value="outerwear"> Jackets &amp; coats</label>
+                <label class="interest-option"><input type="checkbox" value="tops"> T-shirts &amp; tops</label>
+                <label class="interest-option"><input type="checkbox" value="denim"> Jeans &amp; denim</label>
+                <label class="interest-option"><input type="checkbox" value="accessories"> Accessories</label>
+                <label class="interest-option"><input type="checkbox" value="other"> Other</label>
+              </fieldset>
+              <label class="form-field" id="profile-other-category-field" hidden>Describe your other clothing interest
+                <input id="profile-other-category" name="otherCategory" maxlength="80" placeholder="e.g. activewear">
+              </label>
+              <button class="primary" type="submit">Save profile</button>
+              <div class="form-message" id="profile-message" role="status" aria-live="polite"></div>
+            </form>
+          </section>
+          <section class="panel">
+            <p class="eyebrow">LOCAL DEMO ACCOUNT</p>
+            <h3>About your profile</h3>
+            <p class="empty-note">Your name, age, shopping preferences, and budget are stored only in this browser. No password, email, or remote account is created.</p>
+            <div class="profile-actions">
+              <button type="button" class="outline reset-button" id="delete-profile">Delete local profile</button>
+            </div>
+          </section>
+        </div>
+      </section>
+      <footer class="footer">Findora · Price evidence is labeled with its source and data mode.</footer>
+    </main>
+  </div>
+  <script>
+    // Vite replaces percent-wrapped VITE_ placeholders in index.html during `vite` dev and `vite build`.
+    // An unset variable is left as the literal placeholder, which configValue() treats as empty.
+    // These are public build-time settings; never put credentials in VITE_* variables.
+    const ENV_API_URL = '%VITE_API_URL%';
+    const ENV_DEFAULT_MODE = '%VITE_DEFAULT_MODE%';
+    function configValue(value) {
+      const text = typeof value === 'string' ? value.trim() : '';
+      return text && !(text.startsWith('%') && text.endsWith('%')) ? text : '';
+    }
+    function resolveApiUrl() {
+      // Priority: runtime override (window.FINDORA_API_URL) > VITE_API_URL > local FastAPI default.
+      for (const candidate of [window.FINDORA_API_URL, ENV_API_URL]) {
+        const text = configValue(candidate);
+        if (!text) continue;
+        try {
+          const url = new URL(text);
+          if (['http:', 'https:'].includes(url.protocol)) return url.href.replace(/\/+$/, '');
+        } catch {
+          // Ignore malformed values and fall through to the next source.
+        }
+      }
+      return 'http://localhost:8000';
+    }
+    function normalizeMode(value) {
+      const text = configValue(value).toLowerCase();
+      return text === 'api' || text === 'demo' ? text : '';
+    }
+    const API = resolveApiUrl();
+    const DEFAULT_BUDGET = 300;
+    const $ = (id) => document.getElementById(id);
+    const DEMO_PRODUCTS = [
+      { product_id: 'northpeak-fp-hood-100', title: 'NorthPeak Fleece Hoodie', brand: 'NorthPeak', category: 'hoodie', model: 'FP-HOOD-100', variant: 'Charcoal / L', interest: 'sweatshirts', image_url: null, description: 'SEED DEMO catalog fixture. This product and its example prices are synthetic, not a real listing.', data_status: 'demo' },
+      { product_id: 'trailcraft-tc-rs-200', title: 'TrailCraft Rain Shell Jacket', brand: 'TrailCraft', category: 'jacket', model: 'TC-RS-200', variant: 'Navy / M', interest: 'outerwear', image_url: null, description: 'SEED DEMO catalog fixture. This product and its example prices are synthetic, not a real listing.', data_status: 'demo' },
+      { product_id: 'basicsco-bc-tee-300', title: 'BasicsCo Cotton Crew Tee', brand: 'BasicsCo', category: 't-shirt', model: 'BC-TEE-300', variant: 'White / XL', interest: 'tops', image_url: null, description: 'SEED DEMO catalog fixture. This product and its example prices are synthetic, not a real listing.', data_status: 'demo' },
+      { product_id: 'denimworks-dw-jn-400', title: 'DenimWorks Slim Stretch Jeans', brand: 'DenimWorks', category: 'jeans', model: 'DW-JN-400', variant: 'Indigo / 32', interest: 'denim', image_url: null, description: 'SEED DEMO catalog fixture. This product and its example prices are synthetic, not a real listing.', data_status: 'demo' },
+      { product_id: 'northpeak-np-bn-500', title: 'NorthPeak Merino Beanie', brand: 'NorthPeak', category: 'accessory', model: 'NP-BN-500', variant: 'Gray / One Size', interest: 'accessories', image_url: null, description: 'SEED DEMO catalog fixture. This product and its example prices are synthetic, not a real listing.', data_status: 'demo' },
+    ];
+    const DEMO_OFFERS = {
+      'northpeak-fp-hood-100': [
+        { offer_id: 'demo-hood-20261114-do', retailer: 'Demo Outfitters', price: 49.99, currency: 'USD', url: 'https://example.com/demo-outfitters/fleece-hoodie', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-hood-20261114-th', retailer: 'Trailhead Supply Co.', price: 52.99, currency: 'USD', url: 'https://example.com/trailhead-supply/fleece-hoodie', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-hood-20261114-ca', retailer: 'Campus Apparel', price: 47.99, currency: 'USD', url: 'https://example.com/campus-apparel/fleece-hoodie', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-hood-20261114-mm', retailer: 'MegaMart', price: 44.99, currency: 'USD', url: 'https://example.com/megamart/fleece-hoodie-m', observed_at: '2026-11-14T12:00:00Z', match_type: 'unverified', source_type: 'demo' },
+      ],
+      'trailcraft-tc-rs-200': [
+        { offer_id: 'demo-jacket-20261114-th', retailer: 'Trailhead Supply Co.', price: 119, currency: 'USD', url: 'https://example.com/trailhead-supply/rain-shell', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-jacket-20261114-do', retailer: 'Demo Outfitters', price: 125, currency: 'USD', url: 'https://example.com/demo-outfitters/rain-shell', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-jacket-20261114-ut', retailer: 'Uptown Threads', price: 134.5, currency: 'USD', url: 'https://example.com/uptown-threads/rain-shell', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+      ],
+      'basicsco-bc-tee-300': [
+        { offer_id: 'demo-tee-20261114-bb', retailer: 'Basics Barn', price: 15.99, currency: 'USD', url: 'https://example.com/basics-barn/cotton-tee', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-tee-20261114-do', retailer: 'Demo Outfitters', price: 16.99, currency: 'USD', url: 'https://example.com/demo-outfitters/cotton-tee', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-tee-20261114-ca', retailer: 'Campus Apparel', price: 18.99, currency: 'USD', url: 'https://example.com/campus-apparel/cotton-tee', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+      ],
+      'denimworks-dw-jn-400': [
+        { offer_id: 'demo-jeans-20261114-ut', retailer: 'Uptown Threads', price: 79, currency: 'USD', url: 'https://example.com/uptown-threads/slim-jeans', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-jeans-20261114-do', retailer: 'Demo Outfitters', price: 81.5, currency: 'USD', url: 'https://example.com/demo-outfitters/slim-jeans', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-jeans-20261114-th', retailer: 'Trailhead Supply Co.', price: 85, currency: 'USD', url: 'https://example.com/trailhead-supply/slim-jeans', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+      ],
+      'northpeak-np-bn-500': [
+        { offer_id: 'demo-beanie-20261114-ca', retailer: 'Campus Apparel', price: 21.5, currency: 'USD', url: 'https://example.com/campus-apparel/merino-beanie', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-beanie-20261114-bb', retailer: 'Basics Barn', price: 22.75, currency: 'USD', url: 'https://example.com/basics-barn/merino-beanie', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+        { offer_id: 'demo-beanie-20261114-do', retailer: 'Demo Outfitters', price: 23, currency: 'USD', url: 'https://example.com/demo-outfitters/merino-beanie', observed_at: '2026-11-14T12:00:00Z', match_type: 'exact', source_type: 'demo' },
+      ],
+    };
+    const DEMO_HISTORY = {
+      'northpeak-fp-hood-100': [
+        { observed_at: '2026-11-01T12:00:00Z', price: 59.99, currency: 'USD', retailer: 'Demo Outfitters', source_type: 'demo' },
+        { observed_at: '2026-11-07T12:00:00Z', price: 54.99, currency: 'USD', retailer: 'Demo Outfitters', source_type: 'demo' },
+        { observed_at: '2026-11-14T12:00:00Z', price: 49.99, currency: 'USD', retailer: 'Demo Outfitters', source_type: 'demo' },
+      ],
+      'trailcraft-tc-rs-200': [
+        { observed_at: '2026-11-01T12:00:00Z', price: 129, currency: 'USD', retailer: 'Trailhead Supply Co.', source_type: 'demo' },
+        { observed_at: '2026-11-07T12:00:00Z', price: 129, currency: 'USD', retailer: 'Trailhead Supply Co.', source_type: 'demo' },
+        { observed_at: '2026-11-14T12:00:00Z', price: 119, currency: 'USD', retailer: 'Trailhead Supply Co.', source_type: 'demo' },
+      ],
+      'basicsco-bc-tee-300': [
+        { observed_at: '2026-11-01T12:00:00Z', price: 19.99, currency: 'USD', retailer: 'Basics Barn', source_type: 'demo' },
+        { observed_at: '2026-11-07T12:00:00Z', price: 17.99, currency: 'USD', retailer: 'Basics Barn', source_type: 'demo' },
+        { observed_at: '2026-11-14T12:00:00Z', price: 15.99, currency: 'USD', retailer: 'Basics Barn', source_type: 'demo' },
+      ],
+      'denimworks-dw-jn-400': [
+        { observed_at: '2026-11-01T12:00:00Z', price: 89, currency: 'USD', retailer: 'Uptown Threads', source_type: 'demo' },
+        { observed_at: '2026-11-07T12:00:00Z', price: 84, currency: 'USD', retailer: 'Uptown Threads', source_type: 'demo' },
+        { observed_at: '2026-11-14T12:00:00Z', price: 79, currency: 'USD', retailer: 'Uptown Threads', source_type: 'demo' },
+      ],
+      'northpeak-np-bn-500': [
+        { observed_at: '2026-11-01T12:00:00Z', price: 24, currency: 'USD', retailer: 'Campus Apparel', source_type: 'demo' },
+        { observed_at: '2026-11-07T12:00:00Z', price: 24, currency: 'USD', retailer: 'Campus Apparel', source_type: 'demo' },
+        { observed_at: '2026-11-14T12:00:00Z', price: 21.5, currency: 'USD', retailer: 'Campus Apparel', source_type: 'demo' },
+      ],
+    };
+    const state = {
+      products: [],
+      productCache: Object.create(null),
+      savedIds: loadSaved(),
+      savedPrices: Object.create(null),
+      savedErrors: Object.create(null),
+      profile: loadProfile(),
+      mode: loadMode(),
+      budget: DEFAULT_BUDGET,
+      collectionFilter: 'all',
+      searchController: null,
+      detailController: null,
+      catalogController: null,
+      catalog: null,
+      detail: null,
+      currentProduct: null,
+      currentView: 'home',
+    };
+    state.budget = loadBudget(state.profile?.budget ?? DEFAULT_BUDGET);
+    const pageCopy = {
+      home: ['Homepage', 'Your clothing finds, preferences, and budget in one place.'],
+      'price-intelligence': ['Know the right time to buy.', 'Dig into observed prices, seller offers, and product alternatives.'],
+      saved: ['Your collection, organized.', 'Everything you are considering, all in one place.'],
+      profile: ['User profile', 'Update your shopping information and personal preferences.'],
+    };
+    const statusLabels = {
+      demo: 'Seed demo', observed: 'Real observations', insufficient: 'Insufficient data',
+      live: 'Live source', snapshot: 'Real snapshot', exact: 'Exact match',
+      unverified: 'Match unverified', verified: 'Verified real price', historical: 'Last observed price',
+    };
+    const REAL_SOURCE_TYPES = ['snapshot', 'live'];
+    const categoryLabels = {
+      sweatshirts: 'Sweatshirts & hoodies',
+      outerwear: 'Jackets & coats',
+      tops: 'T-shirts & tops',
+      denim: 'Jeans & denim',
+      accessories: 'Accessories',
+      other: 'Other',
+    };
+
+    function node(tag, className, text) {
+      const element = document.createElement(tag);
+      if (className) element.className = className;
+      if (text !== undefined && text !== null) element.textContent = text;
+      return element;
+    }
+
+    function loadSaved() {
+      try {
+        const values = JSON.parse(localStorage.getItem('findora-saved-products') || '[]');
+        return Array.isArray(values) ? values.filter((id) => typeof id === 'string') : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function loadProfile() {
+      try {
+        const profile = JSON.parse(localStorage.getItem('findora-profile') || 'null');
+        if (!profile || profile.profileSetupComplete !== true || typeof profile.name !== 'string' || !profile.name.trim() || !Number.isInteger(Number(profile.age)) || Number(profile.age) < 1 || Number(profile.age) > 120) return null;
+        if (!Array.isArray(profile.categories) || !profile.categories.length) return null;
+        const categories = profile.categories.filter((value) => ['sweatshirts', 'outerwear', 'tops', 'denim', 'accessories', 'other'].includes(value));
+        const [minPrice, maxPrice, budget] = [profile.minPrice, profile.maxPrice, profile.budget].map(Number);
+        if (!categories.length || ![minPrice, maxPrice, budget].every(Number.isFinite) || minPrice < 0 || maxPrice < minPrice || budget < 0) return null;
+        const otherCategory = typeof profile.otherCategory === 'string' ? profile.otherCategory.trim() : '';
+        if (categories.includes('other') && !otherCategory) return null;
+        return {
+          name: profile.name,
+          age: Number(profile.age),
+          minPrice,
+          maxPrice,
+          budget,
+          categories,
+          otherCategory,
+          size: typeof profile.size === 'string' ? profile.size : '',
+          fit: typeof profile.fit === 'string' ? profile.fit : '',
+          colors: typeof profile.colors === 'string' ? profile.colors : '',
+          brands: typeof profile.brands === 'string' ? profile.brands : '',
+        };
+      } catch {
+        return null;
+      }
+    }
+
+    function loadMode() {
+      // Priority: ?mode=api|demo in the URL > choice saved from the dropdown > VITE_DEFAULT_MODE > demo.
+      let urlMode = '';
+      try {
+        urlMode = normalizeMode(new URLSearchParams(location.search).get('mode'));
+      } catch {
+        urlMode = '';
+      }
+      if (urlMode) return urlMode;
+      try {
+        const saved = normalizeMode(localStorage.getItem('findora-mode'));
+        if (saved) return saved;
+      } catch {
+        // Storage unavailable; fall through to the configured default.
+      }
+      return normalizeMode(ENV_DEFAULT_MODE) || 'demo';
+    }
+
+    function syncModeUrl(mode) {
+      // Keep an explicit ?mode= parameter in step with the dropdown so a reload keeps the chosen mode.
+      try {
+        const url = new URL(location.href);
+        if (!url.searchParams.has('mode')) return;
+        url.searchParams.set('mode', mode);
+        history.replaceState(null, '', url);
+      } catch {
+        // History API unavailable; the saved dropdown choice still applies on later visits without ?mode=.
+      }
+    }
+
+    // HTTP failure with a status code and a sanitized FastAPI `detail` (or '' when unsafe/absent).
+    class ApiError extends Error {
+      constructor(kind, status = 0, detail = '') {
+        super(kind === 'http' ? `Request failed (${status})` : 'The API returned an unreadable response');
+        this.name = 'ApiError';
+        this.kind = kind; // 'http' | 'malformed'
+        this.status = status;
+        this.detail = detail;
+      }
+    }
+
+    function safeDetail(detail) {
+      // Show only short, plain backend messages. FastAPI validation errors (lists) and anything
+      // resembling a stack trace or connector internals are replaced with nothing.
+      if (typeof detail !== 'string') return '';
+      const text = detail.replace(/\s+/g, ' ').trim();
+      if (!text || text.length > 200) return '';
+      if (/traceback|exception|error:|\bat \w+\.|file "|sqlstate|token|password|secret|jdbc|https?:\/\//i.test(text)) return '';
+      return text;
+    }
+
+    async function apiGet(path, signal) {
+      const response = await fetch(`${API}${path}`, { signal });
+      if (!response.ok) {
+        let detail = '';
+        try {
+          detail = safeDetail((await response.json())?.detail);
+        } catch {
+          detail = '';
+        }
+        throw new ApiError('http', response.status, detail);
+      }
+      try {
+        const body = await response.json();
+        if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('not an object');
+        return body;
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        throw new ApiError('malformed');
+      }
+    }
+
+    function apiFailureMessage(action, error) {
+      const connectionHelp = location.protocol === 'file:'
+        ? 'This page is opened as a local file. Start the frontend with Vite and open http://localhost:5173, then start FastAPI at http://localhost:8000.'
+        : `Start FastAPI at ${API} and confirm its CORS settings allow ${location.origin}.`;
+      if (error instanceof TypeError) return `Can’t connect to the product API at ${API}. ${connectionHelp}`;
+      if (!(error instanceof ApiError)) return `${action} failed: ${error.message || 'unexpected error'}.`;
+      if (error.kind === 'malformed') return `${action} failed: the API returned a response the app could not read.`;
+      const detail = error.detail ? ` Server message: “${error.detail}”` : '';
+      if (error.status === 404) return `${action}: not found in the API catalog (404).${detail}`;
+      if (error.status === 503) return `${action}: product data is temporarily unavailable (503) — the Databricks data source could not be reached. Try again shortly.${detail}`;
+      if (error.status === 422 || error.status === 400) return `${action}: the API rejected the request (${error.status}).${detail}`;
+      if (error.status >= 500) return `${action}: the API had a server error (${error.status}). Try again shortly.${detail}`;
+      return `${action} failed (${error.status}).${detail}`;
+    }
+
+    function asRecords(value) {
+      // Keep only plain objects from a JSON array so malformed entries cannot crash rendering.
+      return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object' && !Array.isArray(item)) : [];
+    }
+
+    async function fetchProducts(query, signal) {
+      // An empty query asks the backend for its catalog (the backend caps results at 50).
+      const result = await apiGet(`/products/search?q=${encodeURIComponent(query)}`, signal);
+      if (!Array.isArray(result.items)) throw new ApiError('malformed');
+      // Products without a usable canonical product_id cannot be opened, so they are skipped.
+      return asRecords(result.items).filter((item) => typeof item.product_id === 'string' && item.product_id);
+    }
+
+    function loadBudget(fallback = DEFAULT_BUDGET) {
+      try {
+        const saved = localStorage.getItem('findora-budget');
+        const value = saved === null ? Number(fallback) : Number(saved);
+        return Number.isFinite(value) && value >= 0 ? value : Number(fallback);
+      } catch {
+        return Number(fallback);
+      }
+    }
+
+    function formatPrice(price, currency = 'USD', missingText = 'Price unavailable') {
+      if (typeof price !== 'number' || !Number.isFinite(price)) return missingText;
+      try {
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(price);
+      } catch {
+        return `${currency} ${price.toFixed(2)}`;
+      }
+    }
+
+    function formatDate(value) {
+      // new Date(null) is the Unix epoch, so treat null/empty explicitly as missing.
+      if (value === null || value === undefined || value === '') return 'Date unavailable';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value || 'Date unavailable';
+      return `${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(date)} UTC`;
+    }
+
+    function label(status) {
+      const element = node('span', `tag tag-${status || 'unknown'}`, statusLabels[status] || status || 'Status unavailable');
+      return element;
+    }
+
+    function getProfileForm(prefix, group) {
+      const categories = [...document.querySelectorAll(`[data-interest-group="${group}"] input:checked`)].map((input) => input.value);
+      const otherCategory = categories.includes('other') ? $(`${prefix}-other-category`).value.trim() : '';
+      const profile = {
+        name: $(`${prefix}-name`).value.trim(),
+        age: Number($(`${prefix}-age`).value),
+        minPrice: Number($(`${prefix}-min-price`).value),
+        maxPrice: Number($(`${prefix}-max-price`).value),
+        budget: Number($(`${prefix}-budget`).value),
+        categories,
+        otherCategory,
+        size: prefix === 'profile' ? $('profile-size').value.trim() : '',
+        fit: prefix === 'profile' ? $('profile-fit').value : '',
+        colors: prefix === 'profile' ? $('profile-colors').value.trim() : '',
+        brands: prefix === 'profile' ? $('profile-brands').value.trim() : '',
+      };
+      if (!profile.name) return { error: 'Enter your name.' };
+      if (!Number.isInteger(profile.age) || profile.age < 1 || profile.age > 120) return { error: 'Enter an age from 1 to 120.' };
+      if (![profile.minPrice, profile.maxPrice, profile.budget].every(Number.isFinite) || profile.minPrice < 0 || profile.maxPrice < profile.minPrice || profile.budget < 0 || profile.budget > 1000000) {
+        return { error: 'Enter a valid price range and a budget of zero or more.' };
+      }
+      if (!categories.length) return { error: 'Choose at least one clothing interest.' };
+      if (categories.includes('other') && !otherCategory) return { error: 'Describe the other clothing you want to shop for.' };
+      return { profile };
+    }
+
+    function saveLocalProfile(profile, messageId) {
+      try {
+        localStorage.setItem('findora-profile', JSON.stringify({ ...profile, profileSetupComplete: true }));
+        localStorage.setItem('findora-budget', String(profile.budget));
+        state.profile = profile;
+        state.budget = profile.budget;
+        $(messageId).className = 'form-message success';
+        $(messageId).textContent = 'Profile saved on this device.';
+        return true;
+      } catch {
+        $(messageId).className = 'form-message';
+        $(messageId).textContent = 'Could not save your profile in this browser. Check local storage settings and try again.';
+        return false;
+      }
+    }
+
+    function startApp() {
+      $('onboarding').hidden = true;
+      $('app-shell').hidden = false;
+      $('mode-select').value = state.mode;
+      updateModeNotice();
+      renderProfileForm();
+      renderSaved();
+      renderBudget();
+      showView('home');
+      state.savedIds.forEach((id) => loadSavedRecord(id));
+    }
+
+    function renderProfileForm() {
+      if (!state.profile) return;
+      const profile = state.profile;
+      $('profile-name').value = profile.name;
+      $('profile-age').value = profile.age;
+      $('profile-min-price').value = profile.minPrice;
+      $('profile-max-price').value = profile.maxPrice;
+      $('profile-budget').value = profile.budget;
+      $('profile-other-category').value = profile.otherCategory;
+      $('profile-size').value = profile.size;
+      $('profile-fit').value = profile.fit;
+      $('profile-colors').value = profile.colors;
+      $('profile-brands').value = profile.brands;
+      document.querySelectorAll('[data-interest-group="profile"] input').forEach((input) => {
+        input.checked = profile.categories.includes(input.value);
+      });
+      updateOtherCategoryField('profile');
+    }
+
+    function updateOtherCategoryField(group) {
+      const selected = document.querySelector(`[data-interest-group="${group}"] input[value="other"]`).checked;
+      const field = $(`${group}-other-category-field`);
+      const input = $(`${group}-other-category`);
+      field.hidden = !selected;
+      input.required = selected;
+      if (!selected) input.value = '';
+    }
+
+    function categoryName(category, profile = state.profile) {
+      if (category === 'other' && profile?.otherCategory) return `Other: ${profile.otherCategory}`;
+      return Object.hasOwn(categoryLabels, category) ? categoryLabels[category] : category;
+    }
+
+    function updateModeNotice() {
+      const notice = $('mode-notice');
+      notice.className = `mode-notice${state.mode === 'demo' ? ' demo-notice' : ''}`;
+      notice.textContent = state.mode === 'demo'
+        ? 'CLOTHING DEMO MODE — Prices, retailer names, and dates are synthetic seed fixtures, not real offers or observed market history. Guidance remains insufficient.'
+        : `LIVE API MODE (${API}) — Product evidence is shown as returned by the connected API. If it is unavailable, use Clothing demo mode.`;
+    }
+
+    async function loadHomeCatalog(force = false) {
+      if (state.mode !== 'api') return;
+      $('results-title').textContent = 'Live API catalog';
+      if (state.catalog && !force) {
+        renderHomeCatalog();
+        return;
+      }
+      state.catalogController?.abort();
+      const controller = new AbortController();
+      state.catalogController = controller;
+      renderProducts([], 'product-grid');
+      $('result-count').textContent = '';
+      showMessage($('home-message'), 'Loading the live API catalog…');
+      try {
+        const items = await fetchProducts('', controller.signal);
+        if (controller.signal.aborted || state.mode !== 'api') return;
+        state.catalog = items;
+        renderHomeCatalog();
+      } catch (error) {
+        if (error.name === 'AbortError' || controller.signal.aborted) return;
+        state.catalog = null;
+        $('result-count').textContent = '';
+        showMessage($('home-message'), apiFailureMessage('Catalog request', error), true, true, () => loadHomeCatalog(true));
+      }
+    }
+
+    function renderHomeCatalog() {
+      const items = state.catalog || [];
+      renderProducts(items, 'product-grid');
+      $('result-count').textContent = `${items.length} API ${items.length === 1 ? 'item' : 'items'}`;
+      showMessage($('home-message'), items.length
+        ? 'Products returned by the connected API. Select an item, or search above to narrow the list.'
+        : 'The connected API returned an empty catalog. Try again later or switch to Clothing demo mode.');
+    }
+
+    function renderHome() {
+      if (!state.profile) return;
+      const profile = state.profile;
+      $('home-greeting').textContent = `Welcome, ${profile.name}.`;
+      $('avatar').textContent = profile.name.trim().split(/\s+/).slice(0, 2).map((part) => part[0].toUpperCase()).join('');
+      const summary = $('home-profile-summary');
+      summary.replaceChildren();
+      const nameAge = node('p');
+      nameAge.append(node('strong', '', profile.name), document.createTextNode(` · Age ${profile.age}`));
+      const interest = node('p');
+      interest.append(node('strong', '', 'Clothing interests: '), document.createTextNode(profile.categories.map((value) => categoryName(value, profile)).join(', ')));
+      const priceRange = node('p');
+      priceRange.append(node('strong', '', 'Preferred item price: '), document.createTextNode(`${formatPrice(profile.minPrice)}–${formatPrice(profile.maxPrice)}`));
+      summary.append(nameAge, interest, priceRange);
+      const personalPreferences = [profile.size && `Size ${profile.size}`, profile.fit && `${profile.fit} fit`, profile.colors && `Colors: ${profile.colors}`, profile.brands && `Brands: ${profile.brands}`].filter(Boolean);
+      if (personalPreferences.length) summary.append(node('p', '', personalPreferences.join(' · ')));
+      $('budget-stat').textContent = formatPrice(state.budget);
+      if (state.mode === 'demo') {
+        $('results-title').textContent = 'Picked for your interests';
+        const products = DEMO_PRODUCTS.filter((product) => profile.categories.includes(product.interest));
+        renderProducts(products, 'product-grid');
+        $('result-count').textContent = `${products.length} demo ${products.length === 1 ? 'item' : 'items'}`;
+        showMessage($('home-message'), products.length
+          ? 'Seed clothing fixtures are available to explore. Select an item or use the search bar above.'
+          : `No seed clothing fixtures match ${profile.categories.map((value) => categoryName(value, profile)).join(', ')}. Use search to try another item or switch to the live API.`);
+      } else {
+        loadHomeCatalog();
+      }
+      renderBudget();
+    }
+
+    function setMode(mode) {
+      state.searchController?.abort();
+      state.detailController?.abort();
+      state.catalogController?.abort();
+      state.mode = mode === 'api' ? 'api' : 'demo';
+      state.catalog = null;
+      syncModeUrl(state.mode);
+      state.productCache = Object.create(null);
+      state.savedPrices = Object.create(null);
+      state.savedErrors = Object.create(null);
+      $('search-button').disabled = false;
+      $('search-button').innerHTML = 'Search <span aria-hidden="true">→</span>';
+      let saveWarning = '';
+      try {
+        localStorage.setItem('findora-mode', state.mode);
+      } catch {
+        saveWarning = ' This mode choice could not be saved in browser storage.';
+      }
+      $('mode-select').value = state.mode;
+      updateModeNotice();
+      if (saveWarning) $('mode-notice').textContent += saveWarning;
+      state.products = [];
+      $('price-product-grid').replaceChildren();
+      $('price-result-count').textContent = '';
+      $('price-search-message').replaceChildren();
+      $('detail-section').hidden = true;
+      $('price-prompt').hidden = false;
+      $('search-input').value = '';
+      showView('home');
+      state.savedIds.forEach((id) => {
+        if (!state.productCache[id] && !state.savedErrors[id]) loadSavedRecord(id);
+      });
+    }
+
+    function showView(view) {
+      document.querySelectorAll('.page-view').forEach((section) => {
+        section.hidden = section.id !== view;
+      });
+      document.querySelectorAll('[data-view]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.view === view);
+      });
+      const copy = pageCopy[view] || pageCopy.home;
+      $('page-title').textContent = copy[0];
+      $('page-intro').textContent = copy[1];
+      state.currentView = view;
+      $('search-dock').hidden = view !== 'home';
+      if (view === 'home') renderHome();
+      if (view === 'saved') renderSaved();
+      if (view === 'profile') renderProfileForm();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showMessage(container, text, isError = false, retry = false, retryAction = search) {
+      container.replaceChildren();
+      const box = node('div', `message${isError ? ' message-error' : ''}`, text);
+      if (retry) {
+        const button = node('button', 'retry', 'Retry');
+        button.type = 'button';
+        button.addEventListener('click', retryAction);
+        box.append(' ', button);
+      }
+      container.append(box);
+    }
+
+    function updatePricePrompt(hasResults) {
+      $('price-prompt-title').textContent = hasResults
+        ? 'Select a product to see its price intelligence.'
+        : 'Search or select a clothing item.';
+      $('price-prompt-copy').textContent = hasResults
+        ? 'Choose a product button in the catalog results above to view offers, price history, alternatives, and guidance.'
+        : 'Return to Homepage to search, then select a product from the catalog results to inspect its price intelligence.';
+    }
+
+    function safeHttpUrl(value) {
+      try {
+        const url = new URL(value);
+        return ['https:', 'http:'].includes(url.protocol) ? url : null;
+      } catch {
+        return null;
+      }
+    }
+
+    // Evidence helpers. A record counts as real only when the backend labels it snapshot/live;
+    // anything else (demo, missing, unknown) is never treated as real evidence.
+    function hasUsablePrice(record) {
+      return typeof record?.price === 'number' && Number.isFinite(record.price) && record.price > 0;
+    }
+
+    function hasTimestamp(record) {
+      return Number.isFinite(Date.parse(record?.observed_at));
+    }
+
+    function isRealSource(record) {
+      return REAL_SOURCE_TYPES.includes(record?.source_type);
+    }
+
+    function isVerifiedOffer(offer) {
+      // "Verified real price" requires exact-variant match + real source + usable price + timestamp.
+      return offer?.match_type === 'exact' && isRealSource(offer) && hasUsablePrice(offer) && hasTimestamp(offer);
+    }
+
+    function latestRealObservation(observations) {
+      // History observations carry no match_type in the contract, so this is labeled
+      // "Last observed price", never "Verified real price".
+      return observations
+        .filter((item) => isRealSource(item) && hasUsablePrice(item) && hasTimestamp(item))
+        .sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at))[0] || null;
+    }
+
+    function observedText(record) {
+      if (!hasTimestamp(record)) return 'Observation time not provided';
+      if (record.source_type === 'snapshot') return `Snapshot observed ${formatDate(record.observed_at)} · not a live quote`;
+      if (record.source_type === 'live') return `Live source observed ${formatDate(record.observed_at)}`;
+      return formatDate(record.observed_at);
+    }
+
+    function canLinkOffer(offer) {
+      if (offer.source_type === 'demo') return false;
+      const url = safeHttpUrl(offer.url);
+      return Boolean(url && !/(^|\.)example\.(com|org|net)$/i.test(url.hostname));
+    }
+
+    function renderSaved() {
+      $('saved-stat').textContent = `${state.savedIds.length} saved`;
+      $('budget-stat').textContent = formatPrice(state.budget);
+      $('saved-total').textContent = `${state.savedIds.length} saved`;
+      const filters = $('collection-filters');
+      const list = $('saved-list');
+      filters.replaceChildren();
+      list.replaceChildren();
+      const filterOptions = [['all', 'All items'], ...Object.entries(categoryLabels).filter(([category]) => category !== 'other')];
+      if (state.profile?.categories.includes('other') && state.profile.otherCategory) {
+        filterOptions.push(['other', state.profile.otherCategory]);
+      }
+      if (!filterOptions.some(([value]) => value === state.collectionFilter)) state.collectionFilter = 'all';
+      for (const [value, text] of filterOptions) {
+        const button = node('button', `collection-filter${state.collectionFilter === value ? ' active' : ''}`, text);
+        button.type = 'button';
+        button.setAttribute('aria-pressed', String(state.collectionFilter === value));
+        button.addEventListener('click', () => {
+          state.collectionFilter = value;
+          renderSaved();
+        });
+        filters.append(button);
+      }
+      if (!state.savedIds.length) {
+        list.append(node('p', 'empty-note', 'No saved products yet. Search for clothing and save an item to add it here.'));
+        return;
+      }
+      const visibleIds = state.savedIds.filter((id) => {
+        const product = state.mode === 'demo'
+          ? DEMO_PRODUCTS.find((item) => item.product_id === id)
+          : state.productCache[id];
+        return state.collectionFilter === 'all' || collectionCategory(product) === state.collectionFilter;
+      });
+      if (!visibleIds.length) {
+        const activeFilter = filterOptions.find(([value]) => value === state.collectionFilter);
+        list.append(node('p', 'empty-note', `No saved items in ${activeFilter?.[1] || 'this category'}.`));
+        return;
+      }
+      for (const id of visibleIds) {
+        const product = state.mode === 'demo'
+          ? DEMO_PRODUCTS.find((item) => item.product_id === id)
+          : state.productCache[id];
+        const row = node('div', 'collection-row');
+        const icon = node('div', 'thumb', '✳');
+        const details = node('div', 'details');
+        details.append(node('b', '', product?.title || (state.savedErrors[id] ? 'Saved product unavailable' : 'Loading saved product…')));
+        details.append(node('small', '', product?.brand || state.savedErrors[id] || id));
+        const open = node('button', 'outline', product ? 'Price intelligence' : state.savedErrors[id] ? 'Retry' : 'Loading…');
+        open.type = 'button';
+        open.disabled = !product && !state.savedErrors[id];
+        open.addEventListener('click', () => product ? chooseProduct(product) : loadSavedRecord(id));
+        const remove = node('button', 'outline', 'Remove');
+        remove.type = 'button';
+        remove.addEventListener('click', () => removeSaved(id));
+        row.append(icon, details, open, remove);
+        list.append(row);
+      }
+    }
+
+    function collectionCategory(product) {
+      if (!product) return null;
+      if (Object.hasOwn(categoryLabels, product.interest)) return product.interest;
+      const category = String(product.category || '').toLowerCase();
+      if (/hood|sweatshirt|sweater/.test(category)) return 'sweatshirts';
+      if (/jacket|coat|outerwear|shell/.test(category)) return 'outerwear';
+      if (/t-?shirt|tee|top|blouse|shirt/.test(category)) return 'tops';
+      if (/jean|denim/.test(category)) return 'denim';
+      if (/accessor|beanie|hat|belt|bag/.test(category)) return 'accessories';
+      return 'other';
+    }
+
+    function updateSaveButton(button, product) {
+      const saved = state.savedIds.includes(product.product_id);
+      const detailButton = button.id === 'detail-save-button';
+      button.dataset.saveProductId = product.product_id;
+      button.textContent = detailButton ? (saved ? 'Remove from Collection' : 'Add to Collection') : (saved ? '♥' : '♡');
+      button.classList.toggle('saved', saved);
+      button.setAttribute('aria-pressed', String(saved));
+      button.setAttribute('aria-label', detailButton
+        ? (saved ? 'Remove from Collection' : 'Add to Collection')
+        : `${saved ? 'Remove' : 'Save'} ${product.title}`);
+    }
+
+    function syncSaveButtons(product) {
+      document.querySelectorAll('[data-save-product-id]').forEach((button) => {
+        if (button.dataset.saveProductId === product.product_id) updateSaveButton(button, product);
+      });
+    }
+
+    function toggleSaved(product) {
+      const saved = state.savedIds.includes(product.product_id);
+      state.savedIds = saved
+        ? state.savedIds.filter((id) => id !== product.product_id)
+        : [...state.savedIds, product.product_id];
+      state.productCache[product.product_id] = product;
+      try {
+        localStorage.setItem('findora-saved-products', JSON.stringify(state.savedIds));
+        $('storage-message').replaceChildren();
+      } catch {
+        showMessage($('storage-message'), 'Could not save this item in browser storage.', true);
+      }
+      syncSaveButtons(product);
+      renderSaved();
+      if (!saved) loadSavedRecord(product.product_id);
+      renderBudget();
+    }
+
+    function removeSaved(productId) {
+      const product = state.productCache[productId] || DEMO_PRODUCTS.find((item) => item.product_id === productId);
+      state.savedIds = state.savedIds.filter((id) => id !== productId);
+      delete state.savedPrices[productId];
+      delete state.savedErrors[productId];
+      if (product) syncSaveButtons(product);
+      try {
+        localStorage.setItem('findora-saved-products', JSON.stringify(state.savedIds));
+      } catch {
+        showMessage($('storage-message'), 'Could not update saved items in browser storage.', true);
+      }
+      renderSaved();
+      renderBudget();
+    }
+
+    async function loadSavedRecord(productId) {
+      const encodedId = encodeURIComponent(productId);
+      const product = state.productCache[productId];
+      try {
+        if (state.mode === 'demo') {
+          const fixture = DEMO_PRODUCTS.find((item) => item.product_id === productId);
+          if (fixture) {
+            state.productCache[productId] = fixture;
+            const exactUsd = (DEMO_OFFERS[productId] || []).filter((offer) =>
+              offer.match_type === 'exact' && offer.currency === 'USD' &&
+              typeof offer.price === 'number' && Number.isFinite(offer.price)
+            );
+            exactUsd.sort((a, b) => a.price - b.price);
+            state.savedPrices[productId] = exactUsd[0] || null;
+            delete state.savedErrors[productId];
+            renderSaved();
+            renderBudget();
+            return;
+          }
+          state.savedErrors[productId] = 'Not included in the clothing demo catalog.';
+          renderSaved();
+          renderBudget();
+          return;
+        }
+        if (!product) {
+          state.productCache[productId] = await apiGet(`/products/${encodedId}`);
+        }
+        const result = await apiGet(`/products/${encodedId}/offers`);
+        const offers = asRecords(result.offers);
+        const exactUsd = offers.filter((offer) =>
+          offer.match_type === 'exact' &&
+          offer.currency === 'USD' &&
+          typeof offer.price === 'number' &&
+          Number.isFinite(offer.price)
+        );
+        exactUsd.sort((a, b) => a.price - b.price);
+        state.savedPrices[productId] = exactUsd[0] || null;
+        delete state.savedErrors[productId];
+      } catch (error) {
+        state.savedErrors[productId] = savedErrorText(error);
+      }
+      renderSaved();
+      renderBudget();
+    }
+
+    function savedErrorText(error) {
+      // Short, user-facing reasons for the collection and budget rows.
+      if (error instanceof TypeError) return 'Could not reach the product API.';
+      if (error instanceof ApiError && error.kind === 'malformed') return 'The API returned an unreadable response.';
+      if (error instanceof ApiError && error.status === 404) return 'No longer found in the API catalog (404).';
+      if (error instanceof ApiError && error.status === 503) return 'Product data temporarily unavailable (503).';
+      if (error instanceof ApiError) return `Price check failed (${error.status}).`;
+      return error.message || 'Price check failed.';
+    }
+
+    function renderBudget() {
+      $('budget-input').value = state.budget;
+      const list = $('budget-list');
+      list.replaceChildren();
+      if (!state.savedIds.length) {
+        $('budget-total').textContent = 'No saved items';
+        $('budget-message').textContent = 'Save products to compare their offers against your budget.';
+        $('budget-progress').style.width = '0%';
+        return;
+      }
+      const priced = state.savedIds
+        .map((id) => ({ id, offer: state.savedPrices[id] }))
+        .filter((entry) => entry.offer);
+      const total = priced.reduce((sum, entry) => sum + entry.offer.price, 0);
+      const unavailable = state.savedIds.length - priced.length;
+      if (priced.length) {
+        $('budget-total').textContent = `${formatPrice(total)} / ${formatPrice(state.budget)}`;
+        $('budget-message').textContent = unavailable
+          ? `${priced.length} saved product${priced.length === 1 ? '' : 's'} with exact USD offers counted; ${unavailable} without an exact USD offer excluded.`
+          : total > state.budget
+            ? `Saved offers exceed your budget by ${formatPrice(total - state.budget)}.`
+            : `${formatPrice(state.budget - total)} remaining in your planned budget.`;
+        $('budget-progress').style.width = `${state.budget ? Math.min(100, total / state.budget * 100) : total ? 100 : 0}%`;
+        if (priced.some((entry) => entry.offer.source_type === 'demo')) {
+          $('budget-message').textContent += ' Includes seed demo prices — illustrative only, not real purchase prices.';
+        }
+      } else {
+        $('budget-total').textContent = 'Saved offer total unavailable';
+        $('budget-message').textContent = 'No saved product currently has an exact USD offer, so no total is calculated.';
+        $('budget-progress').style.width = '0%';
+      }
+      for (const id of state.savedIds) {
+        const product = state.productCache[id];
+        const offer = state.savedPrices[id];
+        const row = node('div', 'collection-row');
+        row.append(node('div', 'thumb', '✳'));
+        const details = node('div', 'details');
+        details.append(node('b', '', product?.title || id));
+        const sourceText = offer?.source_type === 'demo'
+          ? 'Seed demo price (illustrative)'
+          : statusLabels[offer?.source_type] || 'Source not provided';
+        details.append(node('small', '', state.savedErrors[id] || (offer
+          ? `${offer.retailer || 'Retailer not provided'} · Exact match · ${sourceText}`
+          : 'No current exact USD offer · historical prices are not counted')));
+        row.append(details, node('b', '', offer ? formatPrice(offer.price, offer.currency) : 'Not counted'));
+        list.append(row);
+      }
+    }
+
+    function renderProducts(products, gridId = 'product-grid') {
+      const grid = $(gridId);
+      grid.replaceChildren();
+      for (const product of products) {
+        state.productCache[product.product_id] = product;
+        const card = node('article', 'product-card');
+        const open = node('button', 'product-open');
+        open.type = 'button';
+        open.setAttribute('aria-label', `View ${product.title || 'untitled product'}`);
+        open.addEventListener('click', () => chooseProduct(product));
+        const imageArea = node('div', 'product-image');
+        const imageUrl = safeHttpUrl(product.image_url);
+        if (imageUrl) {
+          const image = node('img');
+          image.src = imageUrl.href;
+          image.alt = '';
+          image.loading = 'lazy';
+          imageArea.append(image);
+        } else {
+          imageArea.append(node('span', '', '✳'));
+        }
+        imageArea.append(node('span', 'category-chip', product.category || 'Clothing'));
+        const copy = node('div', 'product-copy');
+        copy.append(node('span', 'product-brand', product.brand || 'Brand not provided'));
+        copy.append(node('h3', '', product.title || 'Untitled product'));
+        const badges = node('div', 'product-badges');
+        if (product.data_status) badges.append(label(product.data_status));
+        copy.append(badges);
+        copy.append(node('span', 'product-link', 'Inspect price evidence ↗'));
+        open.append(imageArea, copy);
+        const save = node('button', 'save-button');
+        save.type = 'button';
+        updateSaveButton(save, product);
+        save.addEventListener('click', () => toggleSaved(product));
+        card.append(open, save);
+        grid.append(card);
+      }
+      renderSaved();
+    }
+
+    async function search(event) {
+      event?.preventDefault();
+      state.searchController?.abort();
+      state.detailController?.abort();
+      showView('price-intelligence');
+      const controller = new AbortController();
+      state.searchController = controller;
+      $('search-button').disabled = true;
+      $('search-button').textContent = 'Searching…';
+      $('price-search-message').replaceChildren();
+      $('price-product-grid').replaceChildren();
+      state.products = [];
+      $('detail-section').hidden = true;
+      $('price-prompt').hidden = false;
+      updatePricePrompt(false);
+      $('price-result-count').textContent = '';
+      try {
+        const query = $('search-input').value.trim();
+        if (!query && state.mode === 'demo') {
+          showMessage($('price-search-message'), 'Return to Homepage to use the search bar above.');
+          return;
+        }
+        // In API mode an empty query lists the backend catalog.
+        $('price-results-title').textContent = query ? `Results for “${query}”` : 'Live API catalog';
+        showMessage($('price-search-message'), state.mode === 'demo'
+          ? 'Searching the clothing demo catalog…'
+          : query ? 'Searching the live product catalog…' : 'Loading the live API catalog…');
+        if (state.mode === 'demo') {
+          state.products = DEMO_PRODUCTS.filter((product) =>
+            [product.title, product.brand, product.category, product.model, product.variant]
+              .some((value) => value.toLowerCase().includes(query.toLowerCase()))
+          );
+          $('price-search-message').replaceChildren();
+          renderProducts(state.products, 'price-product-grid');
+          $('price-result-count').textContent = `${state.products.length} demo ${state.products.length === 1 ? 'result' : 'results'}`;
+          if (!state.products.length) {
+            const empty = node('div', 'empty-state');
+            empty.append(node('div', 'symbol', '⌕'));
+            empty.append(node('h3', '', `No clothing found for “${query}”`));
+            empty.append(node('p', '', 'Try a brand, garment type, model, or variant from the seed demo catalog.'));
+            $('price-search-message').append(empty);
+          } else {
+            updatePricePrompt(true);
+          }
+          return;
+        }
+        const items = await fetchProducts(query, controller.signal);
+        if (controller.signal.aborted) return;
+        state.products = items;
+        $('price-search-message').replaceChildren();
+        if (state.products.length === 0) {
+          const empty = node('div', 'empty-state');
+          empty.append(node('div', 'symbol', '⌕'));
+          empty.append(node('h3', '', query ? `No clothing found for “${query}”` : 'The live API catalog is empty'));
+          empty.append(node('p', '', 'The live API may not have matching clothing records yet. Try another search or switch to Clothing demo mode.'));
+          $('price-search-message').append(empty);
+          $('price-result-count').textContent = '0 results';
+        } else {
+          renderProducts(state.products, 'price-product-grid');
+          $('price-result-count').textContent = `${state.products.length} ${state.products.length === 1 ? 'result' : 'results'}`;
+          updatePricePrompt(true);
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          state.products = [];
+          showMessage($('price-search-message'), apiFailureMessage('Product search', error), true, true);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          $('search-button').disabled = false;
+          $('search-button').innerHTML = 'Search <span aria-hidden="true">→</span>';
+        }
+      }
+    }
+
+    function renderChart(observations) {
+      const dated = observations
+        .map((item) => ({ ...item, time: Date.parse(item.observed_at) }))
+        .filter((item) => Number.isFinite(item.time) && typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0)
+        .sort((a, b) => a.time - b.time);
+      if (!dated.length) return null;
+      const width = 660, height = 260;
+      const pad = { left: 76, right: 18, top: 20, bottom: 43 };
+      const prices = dated.map((point) => point.price);
+      const low = Math.min(...prices), high = Math.max(...prices);
+      const range = high - low || Math.max(Math.abs(high) * .1, 1);
+      const plotLow = high === low ? low - range / 2 : low;
+      const points = dated.map((point, index) => ({
+        ...point,
+        x: dated.length === 1 ? (width + pad.left - pad.right) / 2 : pad.left + index / (dated.length - 1) * (width - pad.left - pad.right),
+        y: height - pad.bottom - (point.price - plotLow) / range * (height - pad.top - pad.bottom),
+      }));
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'chart');
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', 'Observed product prices over time');
+      const addSvgElement = (tag, attributes, text) => {
+        const element = document.createElementNS(svg.namespaceURI, tag);
+        Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, String(value)));
+        if (text) element.textContent = text;
+        svg.append(element);
+        return element;
+      };
+      [0, .5, 1].forEach((fraction) => {
+        const y = pad.top + fraction * (height - pad.top - pad.bottom);
+        addSvgElement('line', { x1: pad.left, y1: y, x2: width - pad.right, y2: y, class: 'chart-axis' });
+        const tickPrice = high - fraction * (high - low);
+        addSvgElement('text', { x: pad.left - 10, y: y + 4, class: 'chart-label', 'text-anchor': 'end' }, formatPrice(tickPrice, dated[0].currency));
+      });
+      addSvgElement('line', { x1: pad.left, y1: pad.top, x2: pad.left, y2: height - pad.bottom, class: 'chart-axis' });
+      addSvgElement('line', { x1: pad.left, y1: height - pad.bottom, x2: width - pad.right, y2: height - pad.bottom, class: 'chart-axis' });
+      const tickIndexes = [...new Set([0, Math.floor((dated.length - 1) / 2), dated.length - 1])];
+      tickIndexes.forEach((index) => {
+        const point = points[index];
+        const dateLabel = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(point.time));
+        addSvgElement('text', { x: point.x, y: height - 14, class: 'chart-label', 'text-anchor': 'middle' }, dateLabel);
+      });
+      const line = document.createElementNS(svg.namespaceURI, 'path');
+      line.setAttribute('d', points.map((point, index) => `${index ? 'L' : 'M'} ${point.x} ${point.y}`).join(' '));
+      line.setAttribute('class', 'chart-line');
+      svg.append(line);
+      points.forEach((point) => {
+        const circle = document.createElementNS(svg.namespaceURI, 'circle');
+        circle.setAttribute('cx', point.x);
+        circle.setAttribute('cy', point.y);
+        circle.setAttribute('r', '5');
+        circle.setAttribute('class', 'chart-point');
+        const title = document.createElementNS(svg.namespaceURI, 'title');
+        title.textContent = `${formatDate(point.observed_at)}: ${formatPrice(point.price, point.currency)}`;
+        circle.append(title);
+        svg.append(circle);
+      });
+      const wrap = node('div', 'chart-wrap');
+      const rangeLabels = node('div', 'chart-range');
+      const demoOnly = dated.every((point) => point.source_type === 'demo');
+      rangeLabels.append(node('span', '', `${dated.length} dated ${demoOnly ? 'seed-demo ' : ''}observations`));
+      rangeLabels.append(node('span', '', 'Not a market forecast'));
+      wrap.append(svg, rangeLabels);
+      return wrap;
+    }
+
+    function assessHistory(observations) {
+      const dated = observations
+        .map((item) => ({ ...item, time: Date.parse(item.observed_at) }))
+        .filter((item) => Number.isFinite(item.time) && typeof item.price === 'number' && Number.isFinite(item.price) && item.price >= 0);
+      const verified = dated.filter((item) => item.source_type === 'live' || item.source_type === 'snapshot');
+      const dates = new Set(verified.map((item) => new Date(item.time).toISOString().slice(0, 10)));
+      const spanHours = verified.length > 1
+        ? (Math.max(...verified.map((item) => item.time)) - Math.min(...verified.map((item) => item.time))) / 3600000
+        : 0;
+      return { dated, verified, distinctDates: dates.size, spanHours };
+    }
+
+    function renderOffers(offers, observations = []) {
+      const target = $('offers-content');
+      target.replaceChildren();
+      $('offers-count').textContent = String(offers.length);
+      if (!offers.length) {
+        target.append(node('p', 'empty-note', state.mode === 'api'
+          ? 'No current offers were returned for this product.'
+          : 'No offers are available for this product.'));
+      } else {
+        const list = node('div', 'offer-list');
+        for (const offer of offers) {
+          const verified = isVerifiedOffer(offer);
+          const row = node('div', 'offer-row');
+          const info = node('div', 'offer-info');
+          info.append(node('b', '', offer.retailer || 'Retailer not provided'));
+          info.append(node('span', '', observedText(offer)));
+          if (offer.source_type === 'demo') info.append(node('span', '', 'Fictional retailer · seed demo only'));
+          else if (!isRealSource(offer)) info.append(node('span', '', 'Source type not provided · not treated as verified'));
+          else if (!verified) info.append(node('span', '', 'Not verified: requires an exact match, a price, and a timestamp'));
+          const tags = node('div', 'offer-tags');
+          if (verified) tags.append(label('verified'));
+          tags.append(label(offer.match_type), label(offer.source_type));
+          info.append(tags);
+          const price = node('div', 'offer-price');
+          price.append(node('b', '', formatPrice(offer.price, offer.currency)));
+          if (canLinkOffer(offer)) {
+            const url = safeHttpUrl(offer.url);
+            const link = node('a', '', `${url.hostname.replace(/^www\./, '')} ↗`);
+            link.href = url.href;
+            link.target = '_blank';
+            link.rel = 'noreferrer';
+            link.title = 'Open the source page recorded with this observation';
+            price.append(link);
+          } else if (isRealSource(offer)) {
+            price.append(node('span', 'offer-source', 'Source link not provided'));
+          }
+          row.append(info, price);
+          list.append(row);
+        }
+        target.append(list);
+      }
+      if (!offers.some(isVerifiedOffer)) appendLastObserved(target, observations);
+    }
+
+    function appendLastObserved(target, observations) {
+      // Fallback when no fresh verified offer exists: show the newest real historical observation,
+      // explicitly labeled as historical. Demo observations never qualify.
+      const latest = latestRealObservation(observations);
+      if (!latest) return;
+      const card = node('div', 'last-observed');
+      card.setAttribute('aria-label', 'Last observed price, historical');
+      const tags = node('div', 'offer-tags');
+      tags.append(label('historical'), label(latest.source_type));
+      card.append(tags);
+      card.append(node('b', '', formatPrice(latest.price, latest.currency)));
+      card.append(node('span', '', `Observed ${formatDate(latest.observed_at)} · ${latest.retailer || 'Retailer not provided'}`));
+      card.append(node('p', '', 'Historical observation only — not a currently verified retailer offer. No fresh offer was returned, so current price and availability are unknown.'));
+      target.append(card);
+    }
+
+    function renderHistory(observations) {
+      const target = $('history-content');
+      target.replaceChildren();
+      $('history-count').textContent = String(observations.length);
+      if (!observations.length) {
+        target.append(node('p', 'empty-note', state.mode === 'demo'
+          ? 'No seed-demo price points are available. No history or trend is inferred.'
+          : 'No price observations are available. No history or trend is inferred.'));
+        return;
+      }
+      const chart = renderChart(observations);
+      target.append(chart || node('p', 'empty-note', 'No dated observations are available to chart.'));
+      const list = node('div', 'observation-list');
+      // Newest first; observations without a valid timestamp go last instead of breaking the sort.
+      const time = (item) => (hasTimestamp(item) ? Date.parse(item.observed_at) : -Infinity);
+      [...observations].sort((a, b) => time(b) - time(a)).forEach((item) => {
+        const row = node('div', 'observation-row');
+        const info = node('span');
+        info.append(node('span', '', formatDate(item.observed_at)));
+        info.append(node('small', '', `${item.retailer || 'Source not provided'} · ${statusLabels[item.source_type] || item.source_type || 'status unavailable'}`));
+        row.append(info, node('b', '', formatPrice(item.price, item.currency)));
+        list.append(row);
+      });
+      target.append(list);
+    }
+
+    function renderAdvice(data, observations, historyStatus, currentOffers = []) {
+      const target = $('advice-content');
+      target.replaceChildren();
+      const coverage = assessHistory(observations);
+      const hasDemoHistory = state.mode === 'demo' || historyStatus === 'demo' || data.data_status === 'demo'
+        || coverage.dated.some((item) => item.source_type === 'demo') || currentOffers.some((offer) => offer.source_type === 'demo');
+      const enoughRealHistory = historyStatus === 'observed' && coverage.distinctDates >= 3 && coverage.spanHours >= 48;
+      // BUY/WAIT also needs a fresh verified current offer to compare against history (same rule as the backend).
+      const hasVerifiedCurrentOffer = currentOffers.some(isVerifiedOffer);
+      let decision = ['BUY', 'WAIT_OR_COMPARE', 'INSUFFICIENT_DATA'].includes(data.decision) ? data.decision : 'INSUFFICIENT_DATA';
+      let dataStatus = data.data_status || 'insufficient';
+      let explanation = data.explanation || 'No explanation was provided.';
+      if (hasDemoHistory) {
+        decision = 'INSUFFICIENT_DATA';
+        dataStatus = 'insufficient';
+        explanation = 'Seed-demo prices and dates are synthetic, so they cannot support buy/wait guidance. Real advice requires at least 3 distinct UTC dates spanning 48 hours of verified observations.';
+      } else if (enoughRealHistory && !hasVerifiedCurrentOffer && decision !== 'INSUFFICIENT_DATA') {
+        decision = 'INSUFFICIENT_DATA';
+        dataStatus = 'insufficient';
+        explanation = 'INSUFFICIENT_DATA: no fresh verified offer is available to compare against the observed price history.';
+      } else if (!enoughRealHistory || decision === 'INSUFFICIENT_DATA' || dataStatus === 'insufficient') {
+        decision = 'INSUFFICIENT_DATA';
+        dataStatus = 'insufficient';
+        // Only blame coverage when coverage is actually short; otherwise keep the backend's reason.
+        if (!enoughRealHistory) {
+          explanation = `INSUFFICIENT_DATA: found ${coverage.distinctDates} distinct UTC date(s) across ${coverage.spanHours.toFixed(1)} hours. At least 3 dates spanning 48 hours of verified real observations are required.`;
+        }
+      }
+      const card = node('div', 'advice-card');
+      card.append(label(dataStatus));
+      card.append(node('h4', '', decision.replaceAll('_', ' ')));
+      card.append(node('p', '', explanation));
+      appendEvidence(card, data.evidence, hasDemoHistory);
+      target.append(card);
+    }
+
+    // Field names match backend/app/service.py advise() on codex/backend-databricks:
+    // evidence = [{observation_count, distinct_observation_dates, span_hours, first_observed_at,
+    //              last_observed_at, current_lowest_price, median_observed_price}]. Prices may be null.
+    const EVIDENCE_FIELDS = [
+      ['distinct_observation_dates', 'Distinct observation dates (UTC)', 'count'],
+      ['span_hours', 'Historical coverage span', 'hours'],
+      ['observation_count', 'Eligible observations', 'count'],
+      ['current_lowest_price', 'Lowest current verified price', 'price'],
+      ['median_observed_price', 'Historical median price', 'price'],
+      ['first_observed_at', 'First observation', 'date'],
+      ['last_observed_at', 'Latest observation', 'date'],
+    ];
+
+    function formatEvidenceValue(value, kind) {
+      const missing = 'Not available';
+      if (value === null || value === undefined || value === '') return missing;
+      if (kind === 'price') return formatPrice(value, 'USD', missing);
+      if (kind === 'date') return formatDate(value);
+      if (typeof value !== 'number' || !Number.isFinite(value)) return missing;
+      if (kind === 'count') return String(Math.round(value));
+      if (kind === 'hours') return value >= 48 ? `${value.toFixed(1)} hours (${(value / 24).toFixed(1)} days)` : `${value.toFixed(1)} hours`;
+      return String(value);
+    }
+
+    function appendEvidence(card, evidence, isDemo) {
+      const entries = Array.isArray(evidence) ? evidence : [];
+      if (!entries.length) return;
+      card.append(node('p', 'evidence-heading', isDemo
+        ? 'Evidence reported by the API (seed demo data — illustrative only):'
+        : 'Evidence reported by the API:'));
+      const list = node('ul');
+      for (const entry of entries) {
+        if (typeof entry === 'string') {
+          list.append(node('li', '', entry));
+          continue;
+        }
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+        for (const [field, text, kind] of EVIDENCE_FIELDS) {
+          if (!(field in entry)) continue;
+          list.append(node('li', '', `${text}: ${formatEvidenceValue(entry[field], kind)}`));
+        }
+        // Unrecognized fields: show short plain values only, never nested objects.
+        for (const [field, value] of Object.entries(entry)) {
+          if (EVIDENCE_FIELDS.some(([known]) => known === field)) continue;
+          if (!['string', 'number', 'boolean'].includes(typeof value)) continue;
+          const shown = typeof value === 'number' && !Number.isFinite(value) ? 'Not available' : String(value).slice(0, 120);
+          list.append(node('li', '', `${field.replace(/_/g, ' ')}: ${shown}`));
+        }
+      }
+      if (list.children.length) card.append(list);
+    }
+
+    function renderSimilar(items) {
+      const target = $('similar-content');
+      target.replaceChildren();
+      $('similar-count').textContent = String(items.length);
+      if (!items.length) {
+        target.append(node('p', 'empty-note', state.mode === 'demo'
+          ? 'This seed catalog does not assert verified similar-product relationships.'
+          : 'No similar products are available.'));
+        return;
+      }
+      const list = node('div', 'similar-list');
+      items.forEach((item) => {
+        const row = node('div', 'similar-row');
+        const info = node('div');
+        info.append(node('b', '', item.title || 'Untitled product'));
+        info.append(node('span', '', item.brand || 'Brand not provided'));
+        info.append(node('p', '', item.reason || 'No similarity explanation provided.'));
+        row.append(info, node('b', '', formatPrice(item.price, 'USD', 'No current price')));
+        list.append(row);
+      });
+      target.append(list);
+    }
+
+    const DETAIL_SECTIONS = ['offers', 'history', 'similar', 'advice'];
+    const SECTION_NAMES = { offers: 'Offers', history: 'Price history', similar: 'Similar products', advice: 'Buy-or-wait guidance' };
+
+    function detailRecords() {
+      // Offers and advice depend on history (fallback price, coverage); failed sections count as empty.
+      const sections = state.detail?.sections || {};
+      const historyData = sections.history?.error ? null : sections.history?.data;
+      const offerData = sections.offers?.error ? null : sections.offers?.data;
+      return {
+        history: asRecords(historyData?.observations),
+        historyStatus: historyData?.data_status,
+        offers: asRecords(offerData?.offers),
+      };
+    }
+
+    function renderDetailSection(key) {
+      const section = state.detail?.sections[key];
+      if (!section) return;
+      const target = $(`${key}-content`);
+      const { history, historyStatus, offers } = detailRecords();
+      if (section.error) {
+        if ($(`${key}-count`)) $(`${key}-count`).textContent = '';
+        showMessage(target, apiFailureMessage(SECTION_NAMES[key], section.error), true, state.mode === 'api', () => retrySection(key));
+        // History is independent of offers, so still surface the last real observation if one exists.
+        if (key === 'offers') appendLastObserved(target, history);
+        return;
+      }
+      const data = section.data || {};
+      if (key === 'offers') renderOffers(offers, history);
+      if (key === 'history') renderHistory(history);
+      if (key === 'similar') renderSimilar(asRecords(data.items));
+      if (key === 'advice') renderAdvice(data, history, historyStatus, offers);
+    }
+
+    async function retrySection(key) {
+      const detail = state.detail;
+      if (!detail || state.mode !== 'api') return;
+      const signal = state.detailController?.signal;
+      $(`${key}-content`).replaceChildren(node('p', 'empty-note', 'Loading…'));
+      try {
+        detail.sections[key] = { data: await apiGet(detail.paths[key], signal), error: null };
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        detail.sections[key] = { data: null, error };
+      }
+      if (state.detail !== detail) return; // A different product was opened meanwhile.
+      const dependents = { history: ['history', 'offers', 'advice'], offers: ['offers', 'advice'] }[key] || [key];
+      dependents.forEach(renderDetailSection);
+      updateEvidenceMeta();
+    }
+
+    function updateEvidenceMeta() {
+      const { history, offers } = detailRecords();
+      const latest = [...offers, ...history].filter(hasTimestamp)
+        .sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at))[0];
+      if (!latest) {
+        $('detail-evidence-meta').textContent = 'No timestamped price evidence is available for this product.';
+        return;
+      }
+      const isDemoTimestamp = latest.source_type === 'demo';
+      $('detail-evidence-meta').textContent = `${isDemoTimestamp ? 'Latest seed-demo timestamp' : 'Last observed'}: ${formatDate(latest.observed_at)} · ${isDemoTimestamp ? 'synthetic example, not a real observation' : statusLabels[latest.source_type] || 'source status unavailable'}`;
+    }
+
+    async function chooseProduct(product) {
+      state.detailController?.abort();
+      const controller = new AbortController();
+      state.detailController = controller;
+      state.currentProduct = product;
+      state.productCache[product.product_id] = product;
+      updateSaveButton($('detail-save-button'), product);
+      showView('price-intelligence');
+      $('price-prompt').hidden = true;
+      $('detail-section').hidden = false;
+      $('detail-title').textContent = product.title || 'Untitled product';
+      $('detail-subtitle').textContent = [product.brand, product.category].filter(Boolean).join(' · ');
+      $('product-description').textContent = product.description || '';
+      $('product-description').hidden = !product.description;
+      $('product-status').className = label(product.data_status).className;
+      $('product-status').textContent = statusLabels[product.data_status] || product.data_status || 'Status unavailable';
+      $('detail-evidence-meta').textContent = 'Checking the latest available price timestamps…';
+      $('detail-loading').hidden = false;
+      const id = encodeURIComponent(product.product_id);
+      const endpoints = [
+        ['offers', `/products/${id}/offers`],
+        ['history', `/products/${id}/history`],
+        ['similar', `/products/${id}/similar`],
+        ['advice', `/products/${id}/advice`],
+      ];
+      state.detail = null;
+      for (const key of DETAIL_SECTIONS) {
+        $(`${key}-content`).replaceChildren(node('p', 'empty-note', 'Loading…'));
+      }
+      $('offers-count').textContent = '';
+      $('history-count').textContent = '';
+      $('similar-count').textContent = '';
+      let results;
+      if (state.mode === 'demo') {
+        const fixture = DEMO_PRODUCTS.find((item) => item.product_id === product.product_id);
+        results = fixture ? [
+          ['offers', { offers: DEMO_OFFERS[product.product_id] || [] }, null],
+          ['history', { observations: DEMO_HISTORY[product.product_id] || [] }, null],
+          ['similar', { items: [] }, null],
+          ['advice', { decision: 'INSUFFICIENT_DATA', data_status: 'demo', evidence: [] }, null],
+        ] : endpoints.map(([key]) => [key, null, new Error('This item is not in the clothing demo catalog.')]);
+      } else {
+        results = await Promise.all(endpoints.map(async ([key, path]) => {
+          try {
+            return [key, await apiGet(path, controller.signal), null];
+          } catch (error) {
+            return [key, null, error];
+          }
+        }));
+      }
+      if (controller.signal.aborted) return;
+      $('detail-loading').hidden = true;
+      // Keep each section's result so one section can be retried without discarding the others.
+      state.detail = {
+        product,
+        paths: Object.fromEntries(endpoints),
+        sections: Object.fromEntries(results.map(([key, data, error]) => [key, { data, error }])),
+      };
+      DETAIL_SECTIONS.forEach(renderDetailSection);
+      updateEvidenceMeta();
+      $('detail-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (state.savedIds.includes(product.product_id)) {
+        loadSavedRecord(product.product_id);
+      }
+    }
+
+    function resetDemoData() {
+      state.savedIds = [];
+      state.savedPrices = Object.create(null);
+      state.savedErrors = Object.create(null);
+      state.budget = state.profile?.budget ?? DEFAULT_BUDGET;
+      try {
+        localStorage.setItem('findora-saved-products', '[]');
+        localStorage.setItem('findora-budget', String(state.budget));
+        $('reset-message').className = 'form-message success';
+        $('reset-message').textContent = `Saved items cleared and budget reset to ${formatPrice(state.budget)}.`;
+      } catch {
+        $('reset-message').className = 'form-message';
+        $('reset-message').textContent = 'Demo data was reset for this visit, but could not be saved in browser storage.';
+      }
+      renderSaved();
+      renderBudget();
+      renderHome();
+    }
+
+    function deleteLocalProfile() {
+      if (!window.confirm('Delete this local demo profile and clear its saved items and budget?')) return;
+      try {
+        ['findora-profile', 'findora-saved-products', 'findora-budget'].forEach((key) => localStorage.removeItem(key));
+      } catch {
+        $('profile-message').className = 'form-message';
+        $('profile-message').textContent = 'Could not delete the local profile from browser storage.';
+        return;
+      }
+      state.profile = null;
+      state.savedIds = [];
+      state.savedPrices = Object.create(null);
+      state.savedErrors = Object.create(null);
+      state.productCache = Object.create(null);
+      state.budget = DEFAULT_BUDGET;
+      $('app-shell').hidden = true;
+      $('search-dock').hidden = true;
+      $('onboarding').hidden = false;
+      $('setup-form').reset();
+      updateOtherCategoryField('setup');
+      $('setup-message').textContent = '';
+      $('setup-name').focus();
+    }
+
+    $('search-form').addEventListener('submit', search);
+    $('setup-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!$('setup-form').reportValidity()) return;
+      const result = getProfileForm('setup', 'setup');
+      if (result.error) {
+        $('setup-message').className = 'form-message';
+        $('setup-message').textContent = result.error;
+        return;
+      }
+      if (saveLocalProfile(result.profile, 'setup-message')) startApp();
+    });
+    $('profile-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!$('profile-form').reportValidity()) return;
+      const result = getProfileForm('profile', 'profile');
+      if (result.error) {
+        $('profile-message').className = 'form-message';
+        $('profile-message').textContent = result.error;
+        return;
+      }
+      if (saveLocalProfile(result.profile, 'profile-message')) {
+        renderProfileForm();
+        renderSaved();
+        renderHome();
+      }
+    });
+    document.querySelectorAll('[data-interest-group]').forEach((fieldset) => {
+      const group = fieldset.dataset.interestGroup;
+      fieldset.querySelector('input[value="other"]').addEventListener('change', () => updateOtherCategoryField(group));
+    });
+    document.querySelectorAll('[data-view]').forEach((button) => {
+      button.addEventListener('click', () => showView(button.dataset.view));
+    });
+    $('mode-select').addEventListener('change', () => setMode($('mode-select').value));
+    $('detail-save-button').addEventListener('click', () => {
+      if (state.currentProduct) toggleSaved(state.currentProduct);
+    });
+    $('reset-demo').addEventListener('click', resetDemoData);
+    $('delete-profile').addEventListener('click', deleteLocalProfile);
+    $('save-budget').addEventListener('click', () => {
+      const value = Number($('budget-input').value);
+      if (!Number.isFinite(value) || value < 0 || value > 1000000) {
+        $('budget-message').textContent = 'Enter a budget from $0 to $1,000,000.';
+        return;
+      }
+      state.budget = value;
+      try {
+        localStorage.setItem('findora-budget', String(value));
+        $('budget-message').textContent = 'Budget updated on this device.';
+      } catch {
+        $('budget-message').textContent = 'Budget updated for this visit, but could not be saved in browser storage.';
+      }
+      renderBudget();
+      renderSaved();
+    });
+    if (state.profile) {
+      startApp();
+    } else {
+      $('onboarding').hidden = false;
+      $('app-shell').hidden = true;
+      $('search-dock').hidden = true;
+      $('setup-name').focus();
+    }
+  </script>
+</body>
+</html>
