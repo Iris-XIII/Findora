@@ -17,5 +17,24 @@
     "available": true,
     "reviewed_at": "2026-11-15T00:49:00.365551+00:00",
     "review_method": "manual screenshot plus user model and variant confirmations; ASIN unresolved"
+  },
+  {
+    "candidate_id": "b960632b80da6e08d168035729596919",
+    "product_id": "columbia-2088121-black-m-regular",
+    "confirmed": true,
+    "confirmed_attributes": {
+      "brand": "Columbia",
+      "model": "2088121",
+      "color": "Black",
+      "size": "M Regular",
+      "condition": "new",
+      "currency": "USD"
+    },
+    "evidence_url": "https://www.columbia.com/p/mens-marquam-peak-fusion-ii-hooded-parka-2088121.html?color=011&size=M&pid=198711194160",
+    "evidence_notes": "Exact-variant review of manual observation b960632b: official Columbia page (columbia.com) showed Men's Marquam Peak Fusion II Hooded Parka, style 2088121, Black colorway selected (color=011), size Medium available with Add to Cart enabled, $220.00 USD for the selected Black/M variant, single item, new condition. Page Medium maps to regular sizing (no Tall/Big variant). Listed product price is $220.00 USD; shipping and taxes were not independently verified. Screenshot retained at bronze volume evidence/columbia_2088121_black_m.png (3024x1672 PNG).",
+    "price_verified": true,
+    "available": true,
+    "reviewed_at": "2026-11-15T03:21:06.899054+00:00",
+    "review_method": "manual exact-variant page verification by user; screenshot retained in bronze volume evidence directory"
   }
 ]
