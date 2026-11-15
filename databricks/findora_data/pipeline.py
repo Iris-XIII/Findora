@@ -121,8 +121,18 @@ def create_gold(spark, cat):
         ) USING DELTA
     """)
     # Additive columns for deployments created before the unified contract.
-    spark.sql(f"ALTER TABLE {cat}.gold.product_offers ADD COLUMN IF NOT EXISTS provenance STRING AFTER match_type")
-    spark.sql(f"ALTER TABLE {cat}.gold.product_offers ADD COLUMN IF NOT EXISTS source_type STRING AFTER provenance")
+    # Databricks does not support ADD COLUMN IF NOT EXISTS (PARSE_SYNTAX_ERROR,
+    # verified live 2026-11-15), so check information_schema first and use
+    # plain ADD COLUMN. New columns are appended at the end; MERGE matches
+    # columns BY NAME, so order differences vs a fresh install are cosmetic.
+    existing = {r["column_name"] for r in spark.sql(
+        f"SELECT column_name FROM {cat}.information_schema.columns "
+        "WHERE table_schema = 'gold' AND table_name = 'product_offers'"
+    ).collect()}
+    if "provenance" not in existing:
+        spark.sql(f"ALTER TABLE {cat}.gold.product_offers ADD COLUMN provenance STRING")
+    if "source_type" not in existing:
+        spark.sql(f"ALTER TABLE {cat}.gold.product_offers ADD COLUMN source_type STRING")
     # Source staged in a temp view (not an inline WITH subquery) for maximum
     # Databricks SQL compatibility (same pattern as sql/03_gold.sql).
     spark.sql(f"""

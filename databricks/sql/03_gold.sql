@@ -39,11 +39,14 @@ CREATE TABLE IF NOT EXISTS findora_hackathon.gold.product_offers (
   source_type STRING
 ) USING DELTA;
 
--- Additive columns for deployments created before the unified contract.
-ALTER TABLE findora_hackathon.gold.product_offers
-  ADD COLUMN IF NOT EXISTS provenance STRING AFTER match_type;
-ALTER TABLE findora_hackathon.gold.product_offers
-  ADD COLUMN IF NOT EXISTS source_type STRING AFTER provenance;
+-- PRE-2026-11-15 DEPLOYMENTS: an existing gold.product_offers table may lack
+-- provenance (source_type already exists in the current deployment).
+-- Databricks does not support ADD COLUMN IF NOT EXISTS (PARSE_SYNTAX_ERROR,
+-- verified live on serverless 2026-11-15), so the one-time additive
+-- migration lives in sql/migrations/2026-11-15_add_gold_provenance.sql.
+-- Fresh installs get the complete schema from CREATE TABLE IF NOT EXISTS
+-- above; the real-data path (findora_data/pipeline.py::create_gold) adds
+-- missing columns guarded by an information_schema check.
 
 -- Insert/update-only MERGE from Silver. No deletes; no wholesale rebuild.
 -- Source is staged in a TEMP VIEW (not an inline WITH subquery) for maximum

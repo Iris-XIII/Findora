@@ -17,6 +17,17 @@ def read(*parts):
     return Path(ROOT, *parts).read_text()
 
 
+def sql_code(*parts):
+    """SQL content with -- comment lines removed (statement-level checks;
+    comments may legitimately document the unsupported syntax)."""
+    return "\n".join(l for l in read(*parts).splitlines() if not l.strip().startswith("--"))
+
+
+def py_code(*parts):
+    """Python content with # comment lines removed."""
+    return "\n".join(l for l in read(*parts).splitlines() if not l.strip().startswith("#"))
+
+
 class SharedCatalogTests(unittest.TestCase):
     def test_all_artifacts_reference_findora_hackathon(self):
         self.assertIn("findora_hackathon", read("sql", "validation.sql"))
@@ -199,6 +210,40 @@ class SeedSourceColumnTests(unittest.TestCase):
         for name in ("02_silver.sql", "03_gold.sql"):
             sql = read("sql", name).lower()
             self.assertNotIn("from values", sql, name)
+
+
+class GoldColumnMigrationTests(unittest.TestCase):
+    """ADD COLUMN IF NOT EXISTS is not supported by Databricks (live
+    PARSE_SYNTAX_ERROR in Phase 1, 2026-11-15). Column migrations must use
+    plain ADD COLUMN via a one-time migration file or an information_schema
+    guard; fresh installs must get the complete schema from CREATE TABLE."""
+
+    def test_no_unsupported_add_column_if_not_exists(self):
+        for name in ("01_bronze.sql", "02_silver.sql", "03_gold.sql"):
+            self.assertNotRegex(sql_code("sql", name), r"(?i)ADD\s+COLUMNS?\s+IF\s+NOT\s+EXISTS", name)
+        self.assertNotRegex(py_code("findora_data", "pipeline.py"), r"(?i)ADD\s+COLUMNS?\s+IF\s+NOT\s+EXISTS")
+        migration = sql_code("sql", "migrations", "2026-11-15_add_gold_provenance.sql")
+        self.assertNotRegex(migration, r"(?i)IF\s+NOT\s+EXISTS")
+
+    def test_one_time_migration_targets_provenance_only(self):
+        migration = sql_code("sql", "migrations", "2026-11-15_add_gold_provenance.sql")
+        self.assertIn("ALTER TABLE findora_hackathon.gold.product_offers", migration)
+        self.assertIn("ADD COLUMN provenance STRING", migration)
+        self.assertNotRegex(migration, r"(?i)ADD\s+COLUMN\s+source_type",
+                           "source_type already exists; the migration must not add it")
+
+    def test_pipeline_guards_column_migration_with_information_schema(self):
+        pipeline = read("findora_data", "pipeline.py")
+        self.assertIn("information_schema.columns", pipeline)
+        self.assertIn('if "provenance" not in existing:', pipeline)
+        self.assertIn('if "source_type" not in existing:', pipeline)
+        self.assertIn("ADD COLUMN provenance STRING", pipeline)
+
+    def test_fresh_install_schema_complete_in_create_table(self):
+        gold = read("sql", "03_gold.sql")
+        self.assertIn("CREATE TABLE IF NOT EXISTS findora_hackathon.gold.product_offers", gold)
+        self.assertRegex(gold, r"(?i)provenance\s+STRING")
+        self.assertRegex(gold, r"(?i)source_type\s+STRING")
 
 
 if __name__ == "__main__":
