@@ -1,0 +1,6 @@
+command: ['streamlit', 'run', 'app.py', '--server.address', '0.0.0.0', '--server.port', '$DATABRICKS_APP_PORT', '--server.headless', 'true']
+env:
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql-warehouse
+  - name: FINDORA_CATALOG
+    value: findora_hackathon
