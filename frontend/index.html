@@ -114,6 +114,14 @@
     .tag-demo { background: var(--beige); color: #765a2c; }
     .tag-observed, .tag-live, .tag-exact { background: var(--accent-light); color: #4f6597; }
     .tag-insufficient, .tag-unverified { background: #f3eee1; color: #82683c; }
+    .tag-snapshot { background: var(--accent-light); color: #4f6597; }
+    .tag-verified { background: var(--accent); color: white; }
+    .tag-historical { background: #edf0ec; color: #59665d; }
+    .offer-source { color: var(--muted); font-size: 11px; }
+    .last-observed { display: grid; justify-items: start; gap: 6px; margin-top: 10px; padding: 14px; border: 1px dashed #cfd6cc; border-radius: 11px; background: #fafbf9; }
+    .last-observed > b { color: var(--accent); font-size: 18px; }
+    .last-observed > span { color: var(--muted); font-size: 11px; }
+    .last-observed p { margin: 0; color: #6c665b; font-size: 12px; line-height: 1.6; }
     .detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; margin-top: 21px; }
     .panel { min-width: 0; padding: 19px; border: 1px solid var(--line); border-radius: 15px; background: white; }
     .panel-heading { align-items: center; margin-bottom: 14px; }
@@ -141,6 +149,7 @@
     .advice-card p, .advice-card li { color: #68748e; font-size: 12px; line-height: 1.6; }
     .advice-card p { margin: 0; }
     .advice-card ul { margin: 10px 0 0; padding-left: 18px; }
+    .advice-card p.evidence-heading { margin-top: 10px; font-weight: 700; }
     .similar-row > div { min-width: 0; }
     .similar-row > div > b, .similar-row span { display: block; }
     .similar-row span { margin-top: 4px; }
@@ -507,7 +516,34 @@
     </main>
   </div>
   <script>
-    const API = window.FINDORA_API_URL || 'http://localhost:8000';
+    // Vite replaces percent-wrapped VITE_ placeholders in index.html during `vite` dev and `vite build`.
+    // An unset variable is left as the literal placeholder, which configValue() treats as empty.
+    // These are public build-time settings; never put credentials in VITE_* variables.
+    const ENV_API_URL = '%VITE_API_URL%';
+    const ENV_DEFAULT_MODE = '%VITE_DEFAULT_MODE%';
+    function configValue(value) {
+      const text = typeof value === 'string' ? value.trim() : '';
+      return text && !(text.startsWith('%') && text.endsWith('%')) ? text : '';
+    }
+    function resolveApiUrl() {
+      // Priority: runtime override (window.FINDORA_API_URL) > VITE_API_URL > local FastAPI default.
+      for (const candidate of [window.FINDORA_API_URL, ENV_API_URL]) {
+        const text = configValue(candidate);
+        if (!text) continue;
+        try {
+          const url = new URL(text);
+          if (['http:', 'https:'].includes(url.protocol)) return url.href.replace(/\/+$/, '');
+        } catch {
+          // Ignore malformed values and fall through to the next source.
+        }
+      }
+      return 'http://localhost:8000';
+    }
+    function normalizeMode(value) {
+      const text = configValue(value).toLowerCase();
+      return text === 'api' || text === 'demo' ? text : '';
+    }
+    const API = resolveApiUrl();
     const DEFAULT_BUDGET = 300;
     const $ = (id) => document.getElementById(id);
     const DEMO_PRODUCTS = [
@@ -584,6 +620,9 @@
       collectionFilter: 'all',
       searchController: null,
       detailController: null,
+      catalogController: null,
+      catalog: null,
+      detail: null,
       currentProduct: null,
       currentView: 'home',
     };
@@ -597,8 +636,9 @@
     const statusLabels = {
       demo: 'Seed demo', observed: 'Real observations', insufficient: 'Insufficient data',
       live: 'Live source', snapshot: 'Real snapshot', exact: 'Exact match',
-      unverified: 'Match unverified',
+      unverified: 'Match unverified', verified: 'Verified real price', historical: 'Last observed price',
     };
+    const REAL_SOURCE_TYPES = ['snapshot', 'live'];
     const categoryLabels = {
       sweatshirts: 'Sweatshirts & hoodies',
       outerwear: 'Jackets & coats',
@@ -653,11 +693,103 @@
     }
 
     function loadMode() {
+      // Priority: ?mode=api|demo in the URL > choice saved from the dropdown > VITE_DEFAULT_MODE > demo.
+      let urlMode = '';
       try {
-        return localStorage.getItem('findora-mode') === 'api' ? 'api' : 'demo';
+        urlMode = normalizeMode(new URLSearchParams(location.search).get('mode'));
       } catch {
-        return 'demo';
+        urlMode = '';
       }
+      if (urlMode) return urlMode;
+      try {
+        const saved = normalizeMode(localStorage.getItem('findora-mode'));
+        if (saved) return saved;
+      } catch {
+        // Storage unavailable; fall through to the configured default.
+      }
+      return normalizeMode(ENV_DEFAULT_MODE) || 'demo';
+    }
+
+    function syncModeUrl(mode) {
+      // Keep an explicit ?mode= parameter in step with the dropdown so a reload keeps the chosen mode.
+      try {
+        const url = new URL(location.href);
+        if (!url.searchParams.has('mode')) return;
+        url.searchParams.set('mode', mode);
+        history.replaceState(null, '', url);
+      } catch {
+        // History API unavailable; the saved dropdown choice still applies on later visits without ?mode=.
+      }
+    }
+
+    // HTTP failure with a status code and a sanitized FastAPI `detail` (or '' when unsafe/absent).
+    class ApiError extends Error {
+      constructor(kind, status = 0, detail = '') {
+        super(kind === 'http' ? `Request failed (${status})` : 'The API returned an unreadable response');
+        this.name = 'ApiError';
+        this.kind = kind; // 'http' | 'malformed'
+        this.status = status;
+        this.detail = detail;
+      }
+    }
+
+    function safeDetail(detail) {
+      // Show only short, plain backend messages. FastAPI validation errors (lists) and anything
+      // resembling a stack trace or connector internals are replaced with nothing.
+      if (typeof detail !== 'string') return '';
+      const text = detail.replace(/\s+/g, ' ').trim();
+      if (!text || text.length > 200) return '';
+      if (/traceback|exception|error:|\bat \w+\.|file "|sqlstate|token|password|secret|jdbc|https?:\/\//i.test(text)) return '';
+      return text;
+    }
+
+    async function apiGet(path, signal) {
+      const response = await fetch(`${API}${path}`, { signal });
+      if (!response.ok) {
+        let detail = '';
+        try {
+          detail = safeDetail((await response.json())?.detail);
+        } catch {
+          detail = '';
+        }
+        throw new ApiError('http', response.status, detail);
+      }
+      try {
+        const body = await response.json();
+        if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('not an object');
+        return body;
+      } catch (error) {
+        if (error.name === 'AbortError') throw error;
+        throw new ApiError('malformed');
+      }
+    }
+
+    function apiFailureMessage(action, error) {
+      const connectionHelp = location.protocol === 'file:'
+        ? 'This page is opened as a local file. Start the frontend with Vite and open http://localhost:5173, then start FastAPI at http://localhost:8000.'
+        : `Start FastAPI at ${API} and confirm its CORS settings allow ${location.origin}.`;
+      if (error instanceof TypeError) return `Can’t connect to the product API at ${API}. ${connectionHelp}`;
+      if (!(error instanceof ApiError)) return `${action} failed: ${error.message || 'unexpected error'}.`;
+      if (error.kind === 'malformed') return `${action} failed: the API returned a response the app could not read.`;
+      const detail = error.detail ? ` Server message: “${error.detail}”` : '';
+      if (error.status === 404) return `${action}: not found in the API catalog (404).${detail}`;
+      if (error.status === 503) return `${action}: product data is temporarily unavailable (503) — the Databricks data source could not be reached. Try again shortly.${detail}`;
+      if (error.status === 422 || error.status === 400) return `${action}: the API rejected the request (${error.status}).${detail}`;
+      if (error.status >= 500) return `${action}: the API had a server error (${error.status}). Try again shortly.${detail}`;
+      return `${action} failed (${error.status}).${detail}`;
+    }
+
+    function asRecords(value) {
+      // Keep only plain objects from a JSON array so malformed entries cannot crash rendering.
+      return Array.isArray(value) ? value.filter((item) => item && typeof item === 'object' && !Array.isArray(item)) : [];
+    }
+
+    async function fetchProducts(query, signal) {
+      // An empty query asks the backend for its catalog (the backend caps results at 50).
+      const result = await apiGet(`/products/search?q=${encodeURIComponent(query)}`, signal);
+      if (!Array.isArray(result.items)) throw new ApiError('malformed');
+      // Products without a usable canonical product_id cannot be opened, so they are skipped.
+      return asRecords(result.items).filter((item) => typeof item.product_id === 'string' && item.product_id);
     }
 
     function loadBudget(fallback = DEFAULT_BUDGET) {
@@ -670,8 +802,8 @@
       }
     }
 
-    function formatPrice(price, currency = 'USD') {
-      if (typeof price !== 'number' || !Number.isFinite(price)) return 'Price unavailable';
+    function formatPrice(price, currency = 'USD', missingText = 'Price unavailable') {
+      if (typeof price !== 'number' || !Number.isFinite(price)) return missingText;
       try {
         return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(price);
       } catch {
@@ -680,6 +812,8 @@
     }
 
     function formatDate(value) {
+      // new Date(null) is the Unix epoch, so treat null/empty explicitly as missing.
+      if (value === null || value === undefined || value === '') return 'Date unavailable';
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return value || 'Date unavailable';
       return `${new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }).format(date)} UTC`;
@@ -782,7 +916,42 @@
       notice.className = `mode-notice${state.mode === 'demo' ? ' demo-notice' : ''}`;
       notice.textContent = state.mode === 'demo'
         ? 'CLOTHING DEMO MODE — Prices, retailer names, and dates are synthetic seed fixtures, not real offers or observed market history. Guidance remains insufficient.'
-        : 'LIVE API MODE — Product evidence is shown as returned by the connected API. If it is unavailable, use Clothing demo mode.';
+        : `LIVE API MODE (${API}) — Product evidence is shown as returned by the connected API. If it is unavailable, use Clothing demo mode.`;
+    }
+
+    async function loadHomeCatalog(force = false) {
+      if (state.mode !== 'api') return;
+      $('results-title').textContent = 'Live API catalog';
+      if (state.catalog && !force) {
+        renderHomeCatalog();
+        return;
+      }
+      state.catalogController?.abort();
+      const controller = new AbortController();
+      state.catalogController = controller;
+      renderProducts([], 'product-grid');
+      $('result-count').textContent = '';
+      showMessage($('home-message'), 'Loading the live API catalog…');
+      try {
+        const items = await fetchProducts('', controller.signal);
+        if (controller.signal.aborted || state.mode !== 'api') return;
+        state.catalog = items;
+        renderHomeCatalog();
+      } catch (error) {
+        if (error.name === 'AbortError' || controller.signal.aborted) return;
+        state.catalog = null;
+        $('result-count').textContent = '';
+        showMessage($('home-message'), apiFailureMessage('Catalog request', error), true, true, () => loadHomeCatalog(true));
+      }
+    }
+
+    function renderHomeCatalog() {
+      const items = state.catalog || [];
+      renderProducts(items, 'product-grid');
+      $('result-count').textContent = `${items.length} API ${items.length === 1 ? 'item' : 'items'}`;
+      showMessage($('home-message'), items.length
+        ? 'Products returned by the connected API. Select an item, or search above to narrow the list.'
+        : 'The connected API returned an empty catalog. Try again later or switch to Clothing demo mode.');
     }
 
     function renderHome() {
@@ -803,6 +972,7 @@
       if (personalPreferences.length) summary.append(node('p', '', personalPreferences.join(' · ')));
       $('budget-stat').textContent = formatPrice(state.budget);
       if (state.mode === 'demo') {
+        $('results-title').textContent = 'Picked for your interests';
         const products = DEMO_PRODUCTS.filter((product) => profile.categories.includes(product.interest));
         renderProducts(products, 'product-grid');
         $('result-count').textContent = `${products.length} demo ${products.length === 1 ? 'item' : 'items'}`;
@@ -810,9 +980,7 @@
           ? 'Seed clothing fixtures are available to explore. Select an item or use the search bar above.'
           : `No seed clothing fixtures match ${profile.categories.map((value) => categoryName(value, profile)).join(', ')}. Use search to try another item or switch to the live API.`);
       } else {
-        renderProducts([], 'product-grid');
-        $('result-count').textContent = 'Search the live API';
-        showMessage($('home-message'), 'Live catalog results appear in Price Intelligence after you search.');
+        loadHomeCatalog();
       }
       renderBudget();
     }
@@ -820,7 +988,10 @@
     function setMode(mode) {
       state.searchController?.abort();
       state.detailController?.abort();
+      state.catalogController?.abort();
       state.mode = mode === 'api' ? 'api' : 'demo';
+      state.catalog = null;
+      syncModeUrl(state.mode);
       state.productCache = Object.create(null);
       state.savedPrices = Object.create(null);
       state.savedErrors = Object.create(null);
@@ -894,6 +1065,40 @@
       } catch {
         return null;
       }
+    }
+
+    // Evidence helpers. A record counts as real only when the backend labels it snapshot/live;
+    // anything else (demo, missing, unknown) is never treated as real evidence.
+    function hasUsablePrice(record) {
+      return typeof record?.price === 'number' && Number.isFinite(record.price) && record.price > 0;
+    }
+
+    function hasTimestamp(record) {
+      return Number.isFinite(Date.parse(record?.observed_at));
+    }
+
+    function isRealSource(record) {
+      return REAL_SOURCE_TYPES.includes(record?.source_type);
+    }
+
+    function isVerifiedOffer(offer) {
+      // "Verified real price" requires exact-variant match + real source + usable price + timestamp.
+      return offer?.match_type === 'exact' && isRealSource(offer) && hasUsablePrice(offer) && hasTimestamp(offer);
+    }
+
+    function latestRealObservation(observations) {
+      // History observations carry no match_type in the contract, so this is labeled
+      // "Last observed price", never "Verified real price".
+      return observations
+        .filter((item) => isRealSource(item) && hasUsablePrice(item) && hasTimestamp(item))
+        .sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at))[0] || null;
+    }
+
+    function observedText(record) {
+      if (!hasTimestamp(record)) return 'Observation time not provided';
+      if (record.source_type === 'snapshot') return `Snapshot observed ${formatDate(record.observed_at)} · not a live quote`;
+      if (record.source_type === 'live') return `Live source observed ${formatDate(record.observed_at)}`;
+      return formatDate(record.observed_at);
     }
 
     function canLinkOffer(offer) {
@@ -1049,14 +1254,10 @@
           return;
         }
         if (!product) {
-          const response = await fetch(`${API}/products/${encodedId}`);
-          if (!response.ok) throw new Error(`Product request failed (${response.status})`);
-          state.productCache[productId] = await response.json();
+          state.productCache[productId] = await apiGet(`/products/${encodedId}`);
         }
-        const response = await fetch(`${API}/products/${encodedId}/offers`);
-        if (!response.ok) throw new Error(`Offer request failed (${response.status})`);
-        const result = await response.json();
-        const offers = Array.isArray(result.offers) ? result.offers : [];
+        const result = await apiGet(`/products/${encodedId}/offers`);
+        const offers = asRecords(result.offers);
         const exactUsd = offers.filter((offer) =>
           offer.match_type === 'exact' &&
           offer.currency === 'USD' &&
@@ -1067,10 +1268,20 @@
         state.savedPrices[productId] = exactUsd[0] || null;
         delete state.savedErrors[productId];
       } catch (error) {
-        state.savedErrors[productId] = error.message;
+        state.savedErrors[productId] = savedErrorText(error);
       }
       renderSaved();
       renderBudget();
+    }
+
+    function savedErrorText(error) {
+      // Short, user-facing reasons for the collection and budget rows.
+      if (error instanceof TypeError) return 'Could not reach the product API.';
+      if (error instanceof ApiError && error.kind === 'malformed') return 'The API returned an unreadable response.';
+      if (error instanceof ApiError && error.status === 404) return 'No longer found in the API catalog (404).';
+      if (error instanceof ApiError && error.status === 503) return 'Product data temporarily unavailable (503).';
+      if (error instanceof ApiError) return `Price check failed (${error.status}).`;
+      return error.message || 'Price check failed.';
     }
 
     function renderBudget() {
@@ -1096,6 +1307,9 @@
             ? `Saved offers exceed your budget by ${formatPrice(total - state.budget)}.`
             : `${formatPrice(state.budget - total)} remaining in your planned budget.`;
         $('budget-progress').style.width = `${state.budget ? Math.min(100, total / state.budget * 100) : total ? 100 : 0}%`;
+        if (priced.some((entry) => entry.offer.source_type === 'demo')) {
+          $('budget-message').textContent += ' Includes seed demo prices — illustrative only, not real purchase prices.';
+        }
       } else {
         $('budget-total').textContent = 'Saved offer total unavailable';
         $('budget-message').textContent = 'No saved product currently has an exact USD offer, so no total is calculated.';
@@ -1108,7 +1322,12 @@
         row.append(node('div', 'thumb', '✳'));
         const details = node('div', 'details');
         details.append(node('b', '', product?.title || id));
-        details.append(node('small', '', state.savedErrors[id] || (offer ? `${offer.retailer} · Exact match · ${offer.source_type}` : 'No exact USD offer loaded')));
+        const sourceText = offer?.source_type === 'demo'
+          ? 'Seed demo price (illustrative)'
+          : statusLabels[offer?.source_type] || 'Source not provided';
+        details.append(node('small', '', state.savedErrors[id] || (offer
+          ? `${offer.retailer || 'Retailer not provided'} · Exact match · ${sourceText}`
+          : 'No current exact USD offer · historical prices are not counted')));
         row.append(details, node('b', '', offer ? formatPrice(offer.price, offer.currency) : 'Not counted'));
         list.append(row);
       }
@@ -1122,7 +1341,7 @@
         const card = node('article', 'product-card');
         const open = node('button', 'product-open');
         open.type = 'button';
-        open.setAttribute('aria-label', `View ${product.title}`);
+        open.setAttribute('aria-label', `View ${product.title || 'untitled product'}`);
         open.addEventListener('click', () => chooseProduct(product));
         const imageArea = node('div', 'product-image');
         const imageUrl = safeHttpUrl(product.image_url);
@@ -1138,7 +1357,7 @@
         imageArea.append(node('span', 'category-chip', product.category || 'Clothing'));
         const copy = node('div', 'product-copy');
         copy.append(node('span', 'product-brand', product.brand || 'Brand not provided'));
-        copy.append(node('h3', '', product.title));
+        copy.append(node('h3', '', product.title || 'Untitled product'));
         const badges = node('div', 'product-badges');
         if (product.data_status) badges.append(label(product.data_status));
         copy.append(badges);
@@ -1172,12 +1391,15 @@
       $('price-result-count').textContent = '';
       try {
         const query = $('search-input').value.trim();
-        if (!query) {
+        if (!query && state.mode === 'demo') {
           showMessage($('price-search-message'), 'Return to Homepage to use the search bar above.');
           return;
         }
-        $('price-results-title').textContent = `Results for “${query}”`;
-        showMessage($('price-search-message'), state.mode === 'demo' ? 'Searching the clothing demo catalog…' : 'Searching the live product catalog…');
+        // In API mode an empty query lists the backend catalog.
+        $('price-results-title').textContent = query ? `Results for “${query}”` : 'Live API catalog';
+        showMessage($('price-search-message'), state.mode === 'demo'
+          ? 'Searching the clothing demo catalog…'
+          : query ? 'Searching the live product catalog…' : 'Loading the live API catalog…');
         if (state.mode === 'demo') {
           state.products = DEMO_PRODUCTS.filter((product) =>
             [product.title, product.brand, product.category, product.model, product.variant]
@@ -1197,17 +1419,14 @@
           }
           return;
         }
-        const response = await fetch(`${API}/products/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
-        if (!response.ok) throw new Error(`Search failed (${response.status})`);
-        const result = await response.json();
-        if (!Array.isArray(result.items)) throw new Error('Search response did not include a product list');
+        const items = await fetchProducts(query, controller.signal);
         if (controller.signal.aborted) return;
-        state.products = result.items;
+        state.products = items;
         $('price-search-message').replaceChildren();
         if (state.products.length === 0) {
           const empty = node('div', 'empty-state');
           empty.append(node('div', 'symbol', '⌕'));
-          empty.append(node('h3', '', `No clothing found for “${query}”`));
+          empty.append(node('h3', '', query ? `No clothing found for “${query}”` : 'The live API catalog is empty'));
           empty.append(node('p', '', 'The live API may not have matching clothing records yet. Try another search or switch to Clothing demo mode.'));
           $('price-search-message').append(empty);
           $('price-result-count').textContent = '0 results';
@@ -1219,13 +1438,7 @@
       } catch (error) {
         if (error.name !== 'AbortError') {
           state.products = [];
-          const connectionHelp = location.protocol === 'file:'
-            ? 'This page is opened as a local file. Start the frontend with Vite and open http://localhost:5173, then start FastAPI at http://localhost:8000.'
-            : `Start FastAPI at ${API} and confirm its CORS settings allow ${location.origin}. Check that the catalog contains clothing products.`;
-          const errorMessage = error instanceof TypeError
-            ? `Can’t connect to the product API at ${API}. ${connectionHelp}`
-            : `Product search failed: ${error.message}. ${connectionHelp}`;
-          showMessage($('price-search-message'), errorMessage, true, true);
+          showMessage($('price-search-message'), apiFailureMessage('Product search', error), true, true);
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -1314,37 +1527,64 @@
       return { dated, verified, distinctDates: dates.size, spanHours };
     }
 
-    function renderOffers(offers) {
+    function renderOffers(offers, observations = []) {
       const target = $('offers-content');
       target.replaceChildren();
       $('offers-count').textContent = String(offers.length);
       if (!offers.length) {
-        target.append(node('p', 'empty-note', 'No offers are available for this product.'));
-        return;
-      }
-      const list = node('div', 'offer-list');
-      for (const offer of offers) {
-        const row = node('div', 'offer-row');
-        const info = node('div', 'offer-info');
-        info.append(node('b', '', offer.retailer || 'Retailer not provided'));
-        info.append(node('span', '', formatDate(offer.observed_at)));
-        if (offer.source_type === 'demo') info.append(node('span', '', 'Fictional retailer · seed demo only'));
-        const tags = node('div', 'offer-tags');
-        tags.append(label(offer.match_type), label(offer.source_type));
-        info.append(tags);
-        const price = node('div', 'offer-price');
-        price.append(node('b', '', formatPrice(offer.price, offer.currency)));
-        if (canLinkOffer(offer)) {
-          const link = node('a', '', 'Source ↗');
-          link.href = offer.url;
-          link.target = '_blank';
-          link.rel = 'noreferrer';
-          price.append(link);
+        target.append(node('p', 'empty-note', state.mode === 'api'
+          ? 'No current offers were returned for this product.'
+          : 'No offers are available for this product.'));
+      } else {
+        const list = node('div', 'offer-list');
+        for (const offer of offers) {
+          const verified = isVerifiedOffer(offer);
+          const row = node('div', 'offer-row');
+          const info = node('div', 'offer-info');
+          info.append(node('b', '', offer.retailer || 'Retailer not provided'));
+          info.append(node('span', '', observedText(offer)));
+          if (offer.source_type === 'demo') info.append(node('span', '', 'Fictional retailer · seed demo only'));
+          else if (!isRealSource(offer)) info.append(node('span', '', 'Source type not provided · not treated as verified'));
+          else if (!verified) info.append(node('span', '', 'Not verified: requires an exact match, a price, and a timestamp'));
+          const tags = node('div', 'offer-tags');
+          if (verified) tags.append(label('verified'));
+          tags.append(label(offer.match_type), label(offer.source_type));
+          info.append(tags);
+          const price = node('div', 'offer-price');
+          price.append(node('b', '', formatPrice(offer.price, offer.currency)));
+          if (canLinkOffer(offer)) {
+            const url = safeHttpUrl(offer.url);
+            const link = node('a', '', `${url.hostname.replace(/^www\./, '')} ↗`);
+            link.href = url.href;
+            link.target = '_blank';
+            link.rel = 'noreferrer';
+            link.title = 'Open the source page recorded with this observation';
+            price.append(link);
+          } else if (isRealSource(offer)) {
+            price.append(node('span', 'offer-source', 'Source link not provided'));
+          }
+          row.append(info, price);
+          list.append(row);
         }
-        row.append(info, price);
-        list.append(row);
+        target.append(list);
       }
-      target.append(list);
+      if (!offers.some(isVerifiedOffer)) appendLastObserved(target, observations);
+    }
+
+    function appendLastObserved(target, observations) {
+      // Fallback when no fresh verified offer exists: show the newest real historical observation,
+      // explicitly labeled as historical. Demo observations never qualify.
+      const latest = latestRealObservation(observations);
+      if (!latest) return;
+      const card = node('div', 'last-observed');
+      card.setAttribute('aria-label', 'Last observed price, historical');
+      const tags = node('div', 'offer-tags');
+      tags.append(label('historical'), label(latest.source_type));
+      card.append(tags);
+      card.append(node('b', '', formatPrice(latest.price, latest.currency)));
+      card.append(node('span', '', `Observed ${formatDate(latest.observed_at)} · ${latest.retailer || 'Retailer not provided'}`));
+      card.append(node('p', '', 'Historical observation only — not a currently verified retailer offer. No fresh offer was returned, so current price and availability are unknown.'));
+      target.append(card);
     }
 
     function renderHistory(observations) {
@@ -1360,7 +1600,9 @@
       const chart = renderChart(observations);
       target.append(chart || node('p', 'empty-note', 'No dated observations are available to chart.'));
       const list = node('div', 'observation-list');
-      [...observations].sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at)).forEach((item) => {
+      // Newest first; observations without a valid timestamp go last instead of breaking the sort.
+      const time = (item) => (hasTimestamp(item) ? Date.parse(item.observed_at) : -Infinity);
+      [...observations].sort((a, b) => time(b) - time(a)).forEach((item) => {
         const row = node('div', 'observation-row');
         const info = node('span');
         info.append(node('span', '', formatDate(item.observed_at)));
@@ -1371,34 +1613,92 @@
       target.append(list);
     }
 
-    function renderAdvice(data, observations, historyStatus) {
+    function renderAdvice(data, observations, historyStatus, currentOffers = []) {
       const target = $('advice-content');
       target.replaceChildren();
       const coverage = assessHistory(observations);
-      const hasDemoHistory = state.mode === 'demo' || historyStatus === 'demo' || data.data_status === 'demo' || coverage.dated.some((item) => item.source_type === 'demo');
+      const hasDemoHistory = state.mode === 'demo' || historyStatus === 'demo' || data.data_status === 'demo'
+        || coverage.dated.some((item) => item.source_type === 'demo') || currentOffers.some((offer) => offer.source_type === 'demo');
       const enoughRealHistory = historyStatus === 'observed' && coverage.distinctDates >= 3 && coverage.spanHours >= 48;
-      let decision = data.decision || 'INSUFFICIENT_DATA';
+      // BUY/WAIT also needs a fresh verified current offer to compare against history (same rule as the backend).
+      const hasVerifiedCurrentOffer = currentOffers.some(isVerifiedOffer);
+      let decision = ['BUY', 'WAIT_OR_COMPARE', 'INSUFFICIENT_DATA'].includes(data.decision) ? data.decision : 'INSUFFICIENT_DATA';
       let dataStatus = data.data_status || 'insufficient';
       let explanation = data.explanation || 'No explanation was provided.';
       if (hasDemoHistory) {
         decision = 'INSUFFICIENT_DATA';
         dataStatus = 'insufficient';
         explanation = 'Seed-demo prices and dates are synthetic, so they cannot support buy/wait guidance. Real advice requires at least 3 distinct UTC dates spanning 48 hours of verified observations.';
+      } else if (enoughRealHistory && !hasVerifiedCurrentOffer && decision !== 'INSUFFICIENT_DATA') {
+        decision = 'INSUFFICIENT_DATA';
+        dataStatus = 'insufficient';
+        explanation = 'INSUFFICIENT_DATA: no fresh verified offer is available to compare against the observed price history.';
       } else if (!enoughRealHistory || decision === 'INSUFFICIENT_DATA' || dataStatus === 'insufficient') {
         decision = 'INSUFFICIENT_DATA';
         dataStatus = 'insufficient';
-        explanation = `INSUFFICIENT_DATA: found ${coverage.distinctDates} distinct UTC date(s) across ${coverage.spanHours.toFixed(1)} hours. At least 3 dates spanning 48 hours of verified real observations are required.`;
+        // Only blame coverage when coverage is actually short; otherwise keep the backend's reason.
+        if (!enoughRealHistory) {
+          explanation = `INSUFFICIENT_DATA: found ${coverage.distinctDates} distinct UTC date(s) across ${coverage.spanHours.toFixed(1)} hours. At least 3 dates spanning 48 hours of verified real observations are required.`;
+        }
       }
       const card = node('div', 'advice-card');
       card.append(label(dataStatus));
       card.append(node('h4', '', decision.replaceAll('_', ' ')));
       card.append(node('p', '', explanation));
-      if (Array.isArray(data.evidence) && data.evidence.length) {
-        const list = node('ul');
-        data.evidence.forEach((entry) => list.append(node('li', '', typeof entry === 'string' ? entry : JSON.stringify(entry))));
-        card.append(list);
-      }
+      appendEvidence(card, data.evidence, hasDemoHistory);
       target.append(card);
+    }
+
+    // Field names match backend/app/service.py advise() on codex/backend-databricks:
+    // evidence = [{observation_count, distinct_observation_dates, span_hours, first_observed_at,
+    //              last_observed_at, current_lowest_price, median_observed_price}]. Prices may be null.
+    const EVIDENCE_FIELDS = [
+      ['distinct_observation_dates', 'Distinct observation dates (UTC)', 'count'],
+      ['span_hours', 'Historical coverage span', 'hours'],
+      ['observation_count', 'Eligible observations', 'count'],
+      ['current_lowest_price', 'Lowest current verified price', 'price'],
+      ['median_observed_price', 'Historical median price', 'price'],
+      ['first_observed_at', 'First observation', 'date'],
+      ['last_observed_at', 'Latest observation', 'date'],
+    ];
+
+    function formatEvidenceValue(value, kind) {
+      const missing = 'Not available';
+      if (value === null || value === undefined || value === '') return missing;
+      if (kind === 'price') return formatPrice(value, 'USD', missing);
+      if (kind === 'date') return formatDate(value);
+      if (typeof value !== 'number' || !Number.isFinite(value)) return missing;
+      if (kind === 'count') return String(Math.round(value));
+      if (kind === 'hours') return value >= 48 ? `${value.toFixed(1)} hours (${(value / 24).toFixed(1)} days)` : `${value.toFixed(1)} hours`;
+      return String(value);
+    }
+
+    function appendEvidence(card, evidence, isDemo) {
+      const entries = Array.isArray(evidence) ? evidence : [];
+      if (!entries.length) return;
+      card.append(node('p', 'evidence-heading', isDemo
+        ? 'Evidence reported by the API (seed demo data — illustrative only):'
+        : 'Evidence reported by the API:'));
+      const list = node('ul');
+      for (const entry of entries) {
+        if (typeof entry === 'string') {
+          list.append(node('li', '', entry));
+          continue;
+        }
+        if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+        for (const [field, text, kind] of EVIDENCE_FIELDS) {
+          if (!(field in entry)) continue;
+          list.append(node('li', '', `${text}: ${formatEvidenceValue(entry[field], kind)}`));
+        }
+        // Unrecognized fields: show short plain values only, never nested objects.
+        for (const [field, value] of Object.entries(entry)) {
+          if (EVIDENCE_FIELDS.some(([known]) => known === field)) continue;
+          if (!['string', 'number', 'boolean'].includes(typeof value)) continue;
+          const shown = typeof value === 'number' && !Number.isFinite(value) ? 'Not available' : String(value).slice(0, 120);
+          list.append(node('li', '', `${field.replace(/_/g, ' ')}: ${shown}`));
+        }
+      }
+      if (list.children.length) card.append(list);
     }
 
     function renderSimilar(items) {
@@ -1415,13 +1715,76 @@
       items.forEach((item) => {
         const row = node('div', 'similar-row');
         const info = node('div');
-        info.append(node('b', '', item.title));
+        info.append(node('b', '', item.title || 'Untitled product'));
         info.append(node('span', '', item.brand || 'Brand not provided'));
         info.append(node('p', '', item.reason || 'No similarity explanation provided.'));
-        row.append(info, node('b', '', formatPrice(item.price)));
+        row.append(info, node('b', '', formatPrice(item.price, 'USD', 'No current price')));
         list.append(row);
       });
       target.append(list);
+    }
+
+    const DETAIL_SECTIONS = ['offers', 'history', 'similar', 'advice'];
+    const SECTION_NAMES = { offers: 'Offers', history: 'Price history', similar: 'Similar products', advice: 'Buy-or-wait guidance' };
+
+    function detailRecords() {
+      // Offers and advice depend on history (fallback price, coverage); failed sections count as empty.
+      const sections = state.detail?.sections || {};
+      const historyData = sections.history?.error ? null : sections.history?.data;
+      const offerData = sections.offers?.error ? null : sections.offers?.data;
+      return {
+        history: asRecords(historyData?.observations),
+        historyStatus: historyData?.data_status,
+        offers: asRecords(offerData?.offers),
+      };
+    }
+
+    function renderDetailSection(key) {
+      const section = state.detail?.sections[key];
+      if (!section) return;
+      const target = $(`${key}-content`);
+      const { history, historyStatus, offers } = detailRecords();
+      if (section.error) {
+        if ($(`${key}-count`)) $(`${key}-count`).textContent = '';
+        showMessage(target, apiFailureMessage(SECTION_NAMES[key], section.error), true, state.mode === 'api', () => retrySection(key));
+        // History is independent of offers, so still surface the last real observation if one exists.
+        if (key === 'offers') appendLastObserved(target, history);
+        return;
+      }
+      const data = section.data || {};
+      if (key === 'offers') renderOffers(offers, history);
+      if (key === 'history') renderHistory(history);
+      if (key === 'similar') renderSimilar(asRecords(data.items));
+      if (key === 'advice') renderAdvice(data, history, historyStatus, offers);
+    }
+
+    async function retrySection(key) {
+      const detail = state.detail;
+      if (!detail || state.mode !== 'api') return;
+      const signal = state.detailController?.signal;
+      $(`${key}-content`).replaceChildren(node('p', 'empty-note', 'Loading…'));
+      try {
+        detail.sections[key] = { data: await apiGet(detail.paths[key], signal), error: null };
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        detail.sections[key] = { data: null, error };
+      }
+      if (state.detail !== detail) return; // A different product was opened meanwhile.
+      const dependents = { history: ['history', 'offers', 'advice'], offers: ['offers', 'advice'] }[key] || [key];
+      dependents.forEach(renderDetailSection);
+      updateEvidenceMeta();
+    }
+
+    function updateEvidenceMeta() {
+      const { history, offers } = detailRecords();
+      const latest = [...offers, ...history].filter(hasTimestamp)
+        .sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at))[0];
+      if (!latest) {
+        $('detail-evidence-meta').textContent = 'No timestamped price evidence is available for this product.';
+        return;
+      }
+      const isDemoTimestamp = latest.source_type === 'demo';
+      $('detail-evidence-meta').textContent = `${isDemoTimestamp ? 'Latest seed-demo timestamp' : 'Last observed'}: ${formatDate(latest.observed_at)} · ${isDemoTimestamp ? 'synthetic example, not a real observation' : statusLabels[latest.source_type] || 'source status unavailable'}`;
     }
 
     async function chooseProduct(product) {
@@ -1434,7 +1797,7 @@
       showView('price-intelligence');
       $('price-prompt').hidden = true;
       $('detail-section').hidden = false;
-      $('detail-title').textContent = product.title;
+      $('detail-title').textContent = product.title || 'Untitled product';
       $('detail-subtitle').textContent = [product.brand, product.category].filter(Boolean).join(' · ');
       $('product-description').textContent = product.description || '';
       $('product-description').hidden = !product.description;
@@ -1449,7 +1812,8 @@
         ['similar', `/products/${id}/similar`],
         ['advice', `/products/${id}/advice`],
       ];
-      for (const key of ['offers', 'history', 'similar', 'advice']) {
+      state.detail = null;
+      for (const key of DETAIL_SECTIONS) {
         $(`${key}-content`).replaceChildren(node('p', 'empty-note', 'Loading…'));
       }
       $('offers-count').textContent = '';
@@ -1467,9 +1831,7 @@
       } else {
         results = await Promise.all(endpoints.map(async ([key, path]) => {
           try {
-            const response = await fetch(`${API}${path}`, { signal: controller.signal });
-            if (!response.ok) throw new Error(`Request failed (${response.status})`);
-            return [key, await response.json(), null];
+            return [key, await apiGet(path, controller.signal), null];
           } catch (error) {
             return [key, null, error];
           }
@@ -1477,30 +1839,14 @@
       }
       if (controller.signal.aborted) return;
       $('detail-loading').hidden = true;
-      const offerData = results.find(([key]) => key === 'offers')?.[1];
-      const historyData = results.find(([key]) => key === 'history')?.[1];
-      const priceRecords = [
-        ...(Array.isArray(offerData?.offers) ? offerData.offers : []),
-        ...(Array.isArray(historyData?.observations) ? historyData.observations : []),
-      ].filter((item) => Number.isFinite(Date.parse(item.observed_at)));
-      priceRecords.sort((a, b) => Date.parse(b.observed_at) - Date.parse(a.observed_at));
-      if (priceRecords.length) {
-        const latest = priceRecords[0];
-        const isDemoTimestamp = latest.source_type === 'demo';
-        $('detail-evidence-meta').textContent = `${isDemoTimestamp ? 'Latest seed-demo timestamp' : 'Last observed'}: ${formatDate(latest.observed_at)} · ${isDemoTimestamp ? 'synthetic example, not a real observation' : statusLabels[latest.source_type] || 'source status unavailable'}`;
-      } else {
-        $('detail-evidence-meta').textContent = 'No timestamped price evidence is available for this product.';
-      }
-      for (const [key, data, error] of results) {
-        if (error) {
-          showMessage($(`${key}-content`), `${key[0].toUpperCase()}${key.slice(1)} unavailable: ${error.message}`, true, state.mode === 'api', () => chooseProduct(product));
-          continue;
-        }
-        if (key === 'offers') renderOffers(Array.isArray(data.offers) ? data.offers : []);
-        if (key === 'history') renderHistory(Array.isArray(data.observations) ? data.observations : []);
-        if (key === 'similar') renderSimilar(Array.isArray(data.items) ? data.items : []);
-        if (key === 'advice') renderAdvice(data, Array.isArray(historyData?.observations) ? historyData.observations : [], historyData?.data_status);
-      }
+      // Keep each section's result so one section can be retried without discarding the others.
+      state.detail = {
+        product,
+        paths: Object.fromEntries(endpoints),
+        sections: Object.fromEntries(results.map(([key, data, error]) => [key, { data, error }])),
+      };
+      DETAIL_SECTIONS.forEach(renderDetailSection);
+      updateEvidenceMeta();
       $('detail-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
       if (state.savedIds.includes(product.product_id)) {
         loadSavedRecord(product.product_id);
