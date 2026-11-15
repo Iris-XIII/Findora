@@ -3,6 +3,11 @@
 **Status:** IN PROGRESS
 **Last updated:** 2026-11-15 (US Central)
 
+## Final QA (branch `iris/final-qa`, from `origin/main` @ `fe25593`)
+- README rewritten for submission (features, stack, Bronze/Silver/Gold, verified vs unverified, freshness, live URL, run/test/deploy, demo script, limitations). It states that live SerpAPI discovery is not enabled in production.
+- Added a curated photo for `columbia-2088121-black-m-regular`: Columbia's official Australian store (columbiasportswear.com.au, © Columbia Sportswear Company, operated by Skye Group Pty Ltd) lists "Style #: 2088121-011", page title "…Hooded Parka Black". `?color=011` matches the canonical reference_url, and the image file `2088121_011_1.jpg` encodes the same style and color. The image was checked visually. It identifies the product only, not price evidence. No offer, price, Gold, or approval changed.
+- VERIFIED locally: image suite 25/25 (API) + 3/3 (demo), including the Columbia $220 verified-offer path unchanged; full regression and build results are in the PR description.
+
 ## Product images (branch `iris/product-images`)
 
 Started from `origin/main` @ `cfc68ea`. Only `frontend/index.html` and this file changed. Not committed, pushed, or deployed as of this update.
