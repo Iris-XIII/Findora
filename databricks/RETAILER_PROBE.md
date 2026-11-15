@@ -65,3 +65,35 @@ purchase offer that broad search did not establish. Next implementation is a
 variant-aware Amazon detail adapter with selected-ASIN/option checks, seller/stock
 checks, explicit conflict reporting, and normal source timestamps. No automatic
 promotion based solely on title, ASIN equality, or inherited search prices.
+
+## Pipeline adapter and repeatable refresh
+
+The amazon_product normalizer now supports single-purchase offers. It preserves
+selected options/ASIN, source timestamp, seller, stock, and conflicting detail metadata.
+Target model/color/size/single quantity must match; mismatches block approval. Generic
+metadata conflicts require explicit `acknowledged_source_conflicts` in a normal manual
+approval, plus evidence notes and the existing variant/condition/price attestation.
+No automatic approvals are generated. Unsupported/missing purchase data stays in review.
+
+Reuse the already-paid response (no API request):
+
+```bash
+python3 -m findora_data.amazon_detail --input data/retailer_probe/targeted_83c13f4df6df4a88a551aa36c5a7ded1.json
+```
+
+Future refresh (one paid request; no automatic retries):
+
+```bash
+python3 -m findora_data.amazon_detail --asin B01M0PENYV --env-file /path/to/private/.env
+```
+
+Output goes to `data/amazon_refresh/`. Unlike the experimental search files, these
+are standard version-1 ingestion envelopes. Importing the saved observation locally
+produced one Bronze candidate, zero offers, candidate 0d3fc8c37295c7f46cc376e127df89f0,
+with the original 2026-11-15 13:42:31 UTC source time and USD 10.96.
+
+Before cloud upload, integrate the adapter changes into the team's current main
+pipeline; do not replace the unified pipeline or approvals with this older feature
+branch wholesale. After that, upload the new envelope alongside the complete raw
+archive, review it, and run ingestion. Existing approval changes are not part of this
+adapter. Cloud execution is pending; 56 local tests pass.

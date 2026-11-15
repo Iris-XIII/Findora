@@ -243,3 +243,16 @@
 - Raw and comparison files saved under ignored data/retailer_probe, documented in
   RETAILER_PROBE.md. No approval changes, no historical price overwrite, no cloud
   ingestion, and no new normalization code in this step. Evidence lookup tested live.
+
+## Amazon detail adapter prepared (2026-11-15)
+- Added amazon_detail CLI for offline saved-response import or one-request ASIN refresh.
+  Normalizer preserves source timestamp, selected variants, marketplace seller, stock,
+  and contradictory metadata. Exact-target mismatch blocks approval; source conflicts
+  require explicit reviewer acknowledgement. Existing approval file untouched.
+- Offline conversion of the previously fetched response produced standard ingestion
+  envelope amazon_0d3fc8c37295c7f46cc376e127df89f0.json under ignored data/amazon_refresh.
+  One candidate, zero approved offers; no API request or cloud action in this step.
+- Validation: `cd databricks && python3 -m unittest discover -s tests -q`: 56 passed.
+- Integrate adapter code into latest unified main before cloud ingestion. Do not deploy
+  this discovery branch's older pipeline/approval state wholesale. Tests are local;
+  cloud persistence and backend visibility for the new candidate remain pending.
