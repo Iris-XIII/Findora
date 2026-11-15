@@ -1,0 +1,12 @@
+# Databricks App: Findora FastAPI API + compiled frontend served from one origin.
+# Copied into the staging folder by scripts/build_databricks_app.sh; deploy that folder.
+# Requires an App resource of type SQL warehouse with key `sql-warehouse` (Can use).
+# Databricks auth comes from the App's service principal; no tokens belong in this file.
+command: ['uvicorn', 'server:app', '--host', '0.0.0.0', '--port', '$DATABRICKS_APP_PORT']
+env:
+  - name: DATABRICKS_WAREHOUSE_ID
+    valueFrom: sql-warehouse
+  - name: FINDORA_DATA_MODE
+    value: databricks
+  - name: FINDORA_CATALOG
+    value: findora_hackathon

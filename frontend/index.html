@@ -574,9 +574,15 @@
     }
     function resolveApiUrl() {
       // Priority: runtime override (window.FINDORA_API_URL) > VITE_API_URL > local FastAPI default.
+      // The value "same-origin" means the API is served by the same host as this page
+      // (the combined FastAPI + frontend Databricks App).
       for (const candidate of [window.FINDORA_API_URL, ENV_API_URL]) {
         const text = configValue(candidate);
         if (!text) continue;
+        if (text.toLowerCase() === 'same-origin') {
+          if (['http:', 'https:'].includes(location.protocol)) return location.origin;
+          continue; // e.g. opened as file://, so there is no usable origin; fall through.
+        }
         try {
           const url = new URL(text);
           if (['http:', 'https:'].includes(url.protocol)) return url.href.replace(/\/+$/, '');
