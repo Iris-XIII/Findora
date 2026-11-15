@@ -128,7 +128,9 @@ class ProductConfigTests(unittest.TestCase):
         self.assertFalse(old["confirmed"])
         self.assertIn("ASIN unresolved", old["review_method"])
         new = next(a for a in gildan if a["candidate_id"] == "0d3fc8c37295c7f46cc376e127df89f0")
-        self.assertTrue(new["confirmed"])
+        # Agent review with unresolved ASIN/size conflicts is not an exact-match verification.
+        self.assertFalse(new["confirmed"])
+        self.assertIn("pending independent exact-variant product-page verification", new["review_method"])
         self.assertEqual(set(new["acknowledged_source_conflicts"]),
                          {"details_asin_differs", "details_size_differs"})
 
