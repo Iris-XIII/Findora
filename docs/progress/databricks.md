@@ -103,3 +103,18 @@
   No approval or real manual snapshot has been generated from this unresolved evidence.
 - Next: confirm selected variant URL, retain evidence, import and review the observation,
   then verify a populated Gold offer in Databricks.
+
+## First manually reviewed offer prepared
+- User reconfirmed the selected URL and G18000 style. Manual review uses visible Black,
+  Medium, single-item selection, Amazon.com seller, stock and $10.93 price together with
+  user model confirmation. ASIN discrepancy remains explicit in provenance; no ASIN
+  equivalence is asserted. This supersedes the earlier pending-review status above.
+- Local ignored raw file: `databricks/data/raw/manual_df2e9a19369b51861c6fbe5a5412cf32.json`.
+  Approved via `config/approvals.json`; source remains `manual_snapshot`.
+- Local normalization: 171 Bronze, 4 canonical products, 1 offer. These are local counts,
+  not cloud counts. User's last reported cloud state remains 130 Bronze and zero offers.
+- Added a reviewed product-option explanation to the B-owned app and notebook. Timing
+  advice remains insufficient with one observation. Main frontend/backend unchanged.
+- Upload the new manual JSON before running with the updated approval; the full raw
+  archive is still required. Verify one Silver/Gold offer and the final notebook demo row.
+  Cloud execution and App deployment remain unverified.

@@ -122,3 +122,17 @@ display(spark.sql(f"SELECT * FROM `{catalog}`.gold.current_offers ORDER BY produ
 display(spark.sql(f"SELECT * FROM `{catalog}`.gold.price_summary ORDER BY product_id"))
 display(spark.sql(f"SELECT * FROM `{catalog}`.gold.price_coverage ORDER BY product_id"))
 # Re-run ingestion on the same archive: counts must remain identical.
+
+# COMMAND ----------
+# A product option is separate from buy/wait timing advice. Only fresh reviewed offers qualify.
+demo_offers = spark.sql(f"""
+SELECT p.title, o.retailer, o.price, o.currency, o.product_url, o.observed_at,
+       'Reviewed model, color and size match; confirm variant and checkout total at the store.' AS reason,
+       'INSUFFICIENT_DATA: one observation does not establish buy/wait timing.' AS timing_note
+FROM `{catalog}`.gold.current_offers o
+JOIN `{catalog}`.silver.canonical_products p ON p.product_id = o.product_id
+WHERE o.product_id = 'gildan-18000-unisex-black-m-single'
+ORDER BY o.price
+LIMIT 1
+""")
+display(demo_offers)

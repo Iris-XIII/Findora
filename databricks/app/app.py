@@ -47,6 +47,13 @@ try:
     if offers.empty:
         st.info("No reviewed offers from the last 24 hours. Collect and review a new snapshot.")
     else:
+        suggested = offers.iloc[0]
+        st.subheader("An option to consider")
+        st.write(f"{labels[selected]} — {suggested.retailer}, ${suggested.price:,.2f} USD.")
+        st.write("Why: this listing was reviewed against the selected product's model, color, and size. "
+                 "It has the lowest listed price among the fresh reviewed offers in this dataset.")
+        st.caption(f"Based on {len(offers)} reviewed offer(s); this is not a market-wide comparison or a buy-now prediction. "
+                   f"Observed at {suggested.observed_at}. Confirm the variant and checkout total at the store.")
         st.metric("Lowest observed listed price", f"${offers.price.min():,.2f}")
         st.dataframe(offers, hide_index=True, use_container_width=True,
                      column_config={"product_url": st.column_config.LinkColumn("Store listing")})
