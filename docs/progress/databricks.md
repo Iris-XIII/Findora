@@ -118,3 +118,25 @@
 - Upload the new manual JSON before running with the updated approval; the full raw
   archive is still required. Verify one Silver/Gold offer and the final notebook demo row.
   Cloud execution and App deployment remain unverified.
+
+## User-reported cloud success and integration review (2026-11-14 Chicago)
+- User supplied successful notebook output in catalog `workspace`: Bronze 171,
+  canonical products 4, Silver normalized offers 1, Gold product_offers 1,
+  current_offers 1, price_summary 1. Final notebook row shows Gildan Black M single,
+  Amazon.com USD 10.93 at 2026-11-15T00:35:00Z and insufficient timing history.
+  This supersedes the earlier cloud-unverified ingestion status; app deployment and
+  backend integration remain unverified. Evidence is user-provided output, not an
+  independently executed cloud check. Rerun idempotency remains to be verified.
+- Upload issue resolved: 10 missing raw files were copied from the Volume root into
+  its `responses` directory without deleting originals. Diagnostic cells are temporary.
+- Fetched `origin/integration/databricks-unified` at e1aac7a. It already contains
+  d1d2a49 (our latest implementation); no duplicate code push is needed.
+- Deployment differences need resolution before running integration against the
+  working workspace: default catalog changes from workspace to findora_hackathon;
+  Gold product_offers and price_summary change from views to Delta tables. The
+  integration code's CREATE TABLE IF NOT EXISTS / ALTER TABLE / MERGE sequence is
+  not a migration of our existing views. Do not blindly run it against those views.
+- Recommended next milestone: prepare/test the integration migration and confirm
+  backend catalog, then verify the one real Gold offer reaches the demo. Collect
+  further real dated observations afterward; do not substitute seed history for
+  measured history or promise forecasting from one price point.
