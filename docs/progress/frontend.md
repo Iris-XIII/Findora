@@ -3,6 +3,25 @@
 **Status:** IN PROGRESS
 **Last updated:** 2026-11-15 (US Central)
 
+## Product images (branch `iris/product-images`)
+
+Started from `origin/main` @ `cfc68ea`. Only `frontend/index.html` and this file changed. Not committed, pushed, or deployed as of this update.
+
+- Image source order per catalog product: Gold/API `image_url` (http/https only, never example.* hosts) → curated map keyed by exact canonical `product_id` → neutral placeholder.
+- Curated map has one entry: `gildan-18000-unisex-black-m-single` → official Gildan store photo, color Black. The Gildan page (retail.gildan.com, the product's `reference_url`) labels image code 036 "Adult Crewneck Sweatshirt (Black)"; the image was downloaded and visually checked as a black crewneck. It is not from the disputed Amazon listing (no Amazon URL or ASIN appears in the frontend).
+- Columbia (2 products) and Carhartt K121: official pages returned HTTP 403 to automated requests, so no URL could be verified. They use the placeholder; no CDN URLs were guessed.
+- Photos are shown in catalog/Discover cards, the product detail header (with a credit line: "Identifies the product only; not price evidence."), My Collection rows, and budget rows. Demo fixtures, saved links, manual entries, and discovered listings always use the placeholder or their existing kind icon.
+- A failed image load falls back to the placeholder; a late error from a previous product's image is ignored. Images use `referrerpolicy="no-referrer"` and lazy loading.
+- The advice card now carries `data-decision` (the guard-enforced decision) so tests check the decision itself, not the friendly heading text.
+- Phone width (≤450px): detail image 84px; saved-item buttons wrap below the title.
+
+VERIFIED (local, headless Chrome + fixture API; the curated image loads from the real Gildan CDN):
+- New image suite (`phase-f`): 23/23 API mode, 3/3 demo mode. Covers: curated photo, API `image_url`, broken image fallback, `javascript:` URL rejected, placeholder for Columbia, detail credit, no stale photo after switching products, Collection/budget thumbnails, budget total unchanged ($220.00 Columbia only; Gildan photo but "Not counted"), unverified Amazon link stays placeholder, no Amazon image requests, no Referer on curated requests, no horizontal overflow at 390px.
+- Updated 10 assertions for the new advice wording (phase A/B/C/E, local-demo). They now require `data-decision === "INSUFFICIENT_DATA"`, the exact expected heading, the expected explanation text, and no BUY/WAIT text. V1 additionally requires `data-decision === "BUY"`.
+- Full regression: all frontend suites passed (build, phases A–D, F, local-demo, mock); combined Databricks App (phase E) 9/9 on the rebuilt package; backend 42 passed; Databricks 72 passed; deploy diagnostics 16/16; package build OK; `git diff --check` clean.
+
+Limitations: only 1 of 4 real catalog products has a photo. The image is hotlinked from Gildan's BigCommerce CDN (third-party request; URL could change). Setting `image_url` in `databricks/config/products.json` would be the durable fix, but that is Databricks-owned.
+
 ## Databricks App packaging: FastAPI + frontend on one origin (branch `iris/databricks-app-deploy`)
 
 Started from `origin/main` @ `c01c991`, then fast-forwarded (`git merge --ff-only origin/main`) to `aece95a` after `codex/backend-databricks` was merged into `main`. No backend-owned, Databricks pipeline, or approval files changed by this work. Not committed, pushed, or deployed as of this update.

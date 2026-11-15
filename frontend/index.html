@@ -19,6 +19,8 @@
       --muted: #78839a;
       --line: #dce2f0;
       --red: #a64c38;
+      --image-placeholder-bg: linear-gradient(140deg, #eef1f7, #e3e8f2);
+      --image-placeholder-ink: #8e9ab3;
     }
     * { box-sizing: border-box; }
     body { margin: 0; min-width: 320px; }
@@ -75,10 +77,16 @@
     .product-card { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: white; transition: transform .18s ease, box-shadow .18s ease; }
     .product-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px #263b2b0d; }
     .product-open { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; }
-    .product-image { position: relative; display: grid; height: 164px; place-items: center; overflow: hidden; background: linear-gradient(140deg, #e5ebf7, #d4def2); color: #7489bc; font-size: 44px; }
-    .product-card:nth-child(3n + 2) .product-image { background: linear-gradient(140deg, #fff2c9, #f2e8cb); }
-    .product-card:nth-child(3n) .product-image { background: linear-gradient(140deg, #e8eaf7, #dce3f2); }
-    .product-image img { width: 100%; height: 100%; object-fit: cover; }
+    .product-image { position: relative; display: grid; height: 164px; place-items: center; overflow: hidden; background: var(--image-placeholder-bg); color: var(--image-placeholder-ink); font-size: 44px; }
+    .product-image[data-image="photo"] { background: #fff; }
+    .product-image img { width: 100%; height: 100%; object-fit: contain; }
+    .image-placeholder { display: grid; place-items: center; color: var(--image-placeholder-ink); }
+    .detail-identity { display: flex; align-items: flex-start; gap: 16px; min-width: 0; }
+    .detail-identity > div:last-child { min-width: 0; }
+    .detail-media { display: grid; flex: 0 0 112px; width: 112px; height: 112px; place-items: center; overflow: hidden; border: 1px solid var(--line); border-radius: 14px; background: var(--image-placeholder-bg); }
+    .detail-media[data-image="photo"] { background: #fff; }
+    .detail-media img { width: 100%; height: 100%; object-fit: contain; }
+    .image-credit { margin: 6px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
     .category-chip { position: absolute; top: 12px; left: 12px; padding: 6px 9px; border: 1px solid #ffffffb3; border-radius: 30px; background: #ffffffed; color: var(--accent); font-size: 10px; font-weight: 750; }
     .product-copy { padding: 15px 16px 17px; }
     .product-brand { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
@@ -202,7 +210,11 @@
     .form-message { min-height: 18px; color: var(--red); font-size: 12px; }
     .form-message.success { color: #42684e; }
     .collection-row { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
-    .collection-row .thumb { display: grid; width: 48px; height: 48px; flex: 0 0 48px; place-items: center; border-radius: 10px; background: var(--accent-light); color: var(--accent); font-size: 23px; }
+    .collection-row .thumb { display: grid; width: 48px; height: 48px; flex: 0 0 48px; place-items: center; overflow: hidden; border-radius: 10px; background: var(--accent-light); color: var(--accent); font-size: 23px; }
+    .collection-row .thumb[data-image] { border: 1px solid var(--line); background: var(--image-placeholder-bg); }
+    .collection-row .thumb[data-image="photo"] { background: #fff; }
+    .collection-row .thumb img { width: 100%; height: 100%; object-fit: contain; }
+    .collection-row .thumb .image-placeholder svg { width: 26px; height: 26px; }
     .collection-row .details { flex: 1; min-width: 0; }
     .collection-row .details small { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
     .collection-row > b { color: var(--accent-dark); font-size: 13px; white-space: nowrap; }
@@ -273,6 +285,11 @@
       .saved-item span { flex-basis: 100%; }
       .detail-header { display: block; }
       .detail-actions { justify-content: flex-start; margin-top: 12px; }
+      .detail-media { flex-basis: 84px; width: 84px; height: 84px; }
+      #saved-list .collection-row { flex-wrap: wrap; row-gap: 10px; }
+      #saved-list .collection-row .details { flex: 1 1 calc(100% - 62px); }
+      #saved-list .collection-row > button { margin-left: 62px; }
+      #saved-list .collection-row > button ~ button { margin-left: 0; }
       .nav button { padding: 8px; }
       .nav-symbol { font-size: 16px; }
       .interest-fieldset { grid-template-columns: 1fr; }
@@ -457,10 +474,14 @@
         </div>
         <section class="detail-section" id="detail-section" aria-labelledby="detail-title" hidden>
           <div class="detail-header">
-            <div>
-              <p class="eyebrow">PRODUCT INTELLIGENCE</p>
-              <h2 id="detail-title"></h2>
-              <p class="detail-subtitle" id="detail-subtitle"></p>
+            <div class="detail-identity">
+              <div class="detail-media" id="detail-image"></div>
+              <div>
+                <p class="eyebrow">PRODUCT INTELLIGENCE</p>
+                <h2 id="detail-title"></h2>
+                <p class="detail-subtitle" id="detail-subtitle"></p>
+                <p class="image-credit" id="detail-image-credit" hidden></p>
+              </div>
             </div>
             <div class="detail-actions">
               <span class="tag" id="product-status"></span>
@@ -1133,6 +1154,75 @@
       }
     }
 
+    // --- Product images -------------------------------------------------------------------
+    // Images identify a catalog product; they are never evidence of price, availability, or an
+    // exact-match offer. Curated entries are keyed by exact canonical product_id and use only
+    // official manufacturer photos of the canonical color. Products without such a photo (for
+    // example, pages that could not be checked, or disputed marketplace listings) show the
+    // neutral placeholder instead. The backend/Gold `image_url` field takes precedence when set.
+    const CURATED_PRODUCT_IMAGES = Object.freeze({
+      'gildan-18000-unisex-black-m-single': Object.freeze({
+        url: 'https://cdn11.bigcommerce.com/s-ishrbqicno/images/stencil/640w/products/621/6868/18000-036-alt1__03505.1692729335.386.513__07841.1694146387.jpg?c=1',
+        credit: 'Manufacturer photo from the official Gildan store, color Black',
+      }),
+    });
+    const PLACEHOLDER_ICON = '<svg viewBox="0 0 48 48" width="40" height="40" aria-hidden="true" focusable="false"><path d="M17 9l-9 5 3 9 5-2v18h16V21l5 2 3-9-9-5c-1 3-4 5-7 5s-6-2-7-5z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/></svg>';
+
+    function productImage(product) {
+      // Returns {url, credit} or null. Unverified local/discovered items never get a product photo.
+      if (!product || typeof product.product_id !== 'string' || isLocalId(product.product_id)) return null;
+      const fromApi = safeHttpUrl(product.image_url);
+      if (fromApi && !isPlaceholderHost(fromApi)) return { url: fromApi.href, credit: 'Product photo from the Findora catalog' };
+      const curated = Object.hasOwn(CURATED_PRODUCT_IMAGES, product.product_id) ? CURATED_PRODUCT_IMAGES[product.product_id] : null;
+      return curated ? { url: curated.url, credit: curated.credit } : null;
+    }
+
+    function imagePlaceholder() {
+      const placeholder = node('span', 'image-placeholder');
+      placeholder.setAttribute('role', 'img');
+      placeholder.setAttribute('aria-label', 'No product image available');
+      placeholder.innerHTML = PLACEHOLDER_ICON; // static markup, never data-derived
+      return placeholder;
+    }
+
+    function fillProductImage(container, product, alt = '', onFallback = null) {
+      // Puts the product photo (or the neutral placeholder) into container; a failed load falls back.
+      container.querySelectorAll('img, .image-placeholder').forEach((element) => element.remove());
+      const image = productImage(product);
+      const showPlaceholder = () => {
+        container.querySelector('img')?.remove();
+        container.prepend(imagePlaceholder());
+        container.dataset.image = 'placeholder';
+        onFallback?.();
+      };
+      if (!image) {
+        showPlaceholder();
+        return null;
+      }
+      const img = node('img');
+      img.alt = alt;
+      img.loading = 'lazy';
+      img.decoding = 'async';
+      img.referrerPolicy = 'no-referrer';
+      // Ignore late errors from an image already replaced by another product's image.
+      img.addEventListener('error', () => { if (img.isConnected) showPlaceholder(); }, { once: true });
+      img.src = image.url;
+      container.prepend(img);
+      container.dataset.image = 'photo';
+      return image;
+    }
+
+    function setDetailImage(product) {
+      const credit = $('detail-image-credit');
+      const hideCredit = () => { credit.hidden = true; credit.textContent = ''; };
+      hideCredit();
+      const image = fillProductImage($('detail-image'), product, product?.title ? `${product.title} product photo` : 'Product photo', hideCredit);
+      if (image) {
+        credit.textContent = `${image.credit}. Identifies the product only; not price evidence.`;
+        credit.hidden = false;
+      }
+    }
+
     // Evidence helpers. A record counts as real only when the backend labels it snapshot/live;
     // anything else (demo, missing, unknown) is never treated as real evidence.
     function hasUsablePrice(record) {
@@ -1475,6 +1565,7 @@
       $('detail-loading').hidden = true;
       $('detail-title').textContent = item.title;
       $('detail-subtitle').textContent = [item.retailer, categoryName(item.interest)].filter(Boolean).join(' · ');
+      setDetailImage(item); // unverified item: neutral placeholder, no credit line
       $('product-description').textContent = 'Not tracked by Findora yet — there is no verified price, price history, or buy/wait guidance for this item.';
       $('product-description').hidden = false;
       $('product-status').className = 'tag tag-unverified';
@@ -1489,6 +1580,7 @@
       $('history-content').replaceChildren(node('p', 'empty-note', 'Not tracked by Findora — no verified price history exists for this item.'));
       renderSimilar(item.similar || []);
       const advice = node('div', 'advice-card');
+      advice.dataset.decision = 'INSUFFICIENT_DATA';
       advice.append(label('insufficient'), node('h4', '', 'INSUFFICIENT DATA'));
       advice.append(node('p', '', 'Unverified items are never used for buy/wait guidance. Guidance requires verified exact-match offers and at least 3 dates of real price history.'));
       $('advice-content').replaceChildren(advice);
@@ -1624,7 +1716,8 @@
           ? DEMO_PRODUCTS.find((item) => item.product_id === id)
           : state.productCache[id];
         const row = node('div', 'collection-row');
-        const icon = node('div', 'thumb', '✳');
+        const icon = node('div', 'thumb');
+        fillProductImage(icon, product);
         const details = node('div', 'details');
         details.append(node('b', '', product?.title || (state.savedErrors[id] ? 'Saved product unavailable' : 'Loading saved product…')));
         details.append(node('small', '', product?.brand || state.savedErrors[id] || id));
@@ -1827,7 +1920,9 @@
         const product = state.productCache[id];
         const offer = state.savedPrices[id];
         const row = node('div', 'collection-row');
-        row.append(node('div', 'thumb', '✳'));
+        const icon = node('div', 'thumb');
+        fillProductImage(icon, product);
+        row.append(icon);
         const details = node('div', 'details');
         details.append(node('b', '', product?.title || id));
         const sourceText = offer?.source_type === 'demo'
@@ -1867,17 +1962,8 @@
         open.setAttribute('aria-label', `View ${product.title || 'untitled product'}`);
         open.addEventListener('click', () => chooseProduct(product));
         const imageArea = node('div', 'product-image');
-        const imageUrl = safeHttpUrl(product.image_url);
-        if (imageUrl) {
-          const image = node('img');
-          image.src = imageUrl.href;
-          image.alt = '';
-          image.loading = 'lazy';
-          imageArea.append(image);
-        } else {
-          imageArea.append(node('span', '', '✳'));
-        }
         imageArea.append(node('span', 'category-chip', product.category || 'Clothing'));
+        fillProductImage(imageArea, product);
         const copy = node('div', 'product-copy');
         copy.append(node('span', 'product-brand', product.brand || 'Brand not provided'));
         copy.append(node('h3', '', product.title || 'Untitled product'));
@@ -2077,8 +2163,8 @@
         open.setAttribute('aria-label', `View ${item.title}`);
         open.addEventListener('click', () => openLocalItem(state.localItems[item.product_id] || item));
         const imageArea = node('div', 'product-image');
-        imageArea.append(node('span', '', '✳'));
         imageArea.append(node('span', 'category-chip', 'Unverified'));
+        fillProductImage(imageArea, item); // unverified listing: always the neutral placeholder
         const copy = node('div', 'product-copy');
         copy.append(node('span', 'product-brand', item.retailer || 'Retailer not provided'));
         copy.append(node('h3', '', item.title));
@@ -2312,6 +2398,7 @@
         }
       }
       const card = node('div', 'advice-card');
+      card.dataset.decision = decision; // final, guard-enforced decision (headings are friendly wording)
       card.append(decision === 'INSUFFICIENT_DATA'
         ? node('span', 'tag', hasDemoHistory ? 'Demo data' : 'Price tracking')
         : label(dataStatus));
@@ -2474,6 +2561,7 @@
       $('detail-section').hidden = false;
       $('detail-title').textContent = product.title || 'Untitled product';
       $('detail-subtitle').textContent = [product.brand, product.category].filter(Boolean).join(' · ');
+      setDetailImage(product);
       $('product-description').textContent = product.description || '';
       $('product-description').hidden = !product.description;
       $('product-status').className = label(product.data_status).className;
