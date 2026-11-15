@@ -5,6 +5,8 @@ Findora is a shopping price-intelligence app built for MadHacks 2026 (Databricks
 **Live Databricks App:** https://findora-7474652186980812.aws.databricksapps.com
 (Databricks Apps require a Databricks login with access to the workspace. If you can't open it, see the demo video and the local demo instructions below.)
 
+**Demo App***: https://findora-pink.vercel.app/
+
 ## What makes Findora different
 - **Every price shows how it was verified.** A price is shown as *Verified real price* only after it passes an exact-match review: same brand, model, color, size and condition, in USD, with a timestamp. Everything else is labeled clearly: last observed, unverified listing, price you entered, or seed demo.
 - **Findora doesn't guess.** BUY or WAIT advice is shown only when there's a fresh verified offer *and* at least 3 distinct UTC dates of verified history spanning 48 hours. Otherwise the decision is `INSUFFICIENT_DATA`, with a plain explanation such as "View available offer" or "Price check pending".
